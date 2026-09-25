@@ -89,6 +89,8 @@ data class AddFlowState(
     val recentMeals: List<Meal> = emptyList(),
     val barcode: BarcodeState = BarcodeState.Scanning,
     val saving: Boolean = false,
+    val importing: Boolean = false,
+    val message: String? = null,
 ) {
     val portionFactor: Double get() = PortionScale.factor(mealPortionIndex)
 
@@ -144,15 +146,31 @@ class AddFlowViewModel @Inject constructor(
     }
 
     fun importGallery(uris: List<Uri>, onDone: () -> Unit) {
+        _state.update { it.copy(importing = true, message = null) }
         viewModelScope.launch {
+            var imported = 0
             for (uri in uris.take(MAX_PHOTOS)) {
-                val path = photoStorage.importFromUri(uri) ?: continue
+                val path = runCatching { photoStorage.importFromUri(uri) }.getOrNull() ?: continue
+                imported++
                 _state.update { it.copy(photos = it.photos + path) }
                 checkQuality(path)
             }
-            if (_state.value.photos.isNotEmpty()) onDone()
+            val failed = uris.size.coerceAtMost(MAX_PHOTOS) - imported
+            _state.update {
+                it.copy(
+                    importing = false,
+                    message = when {
+                        imported == 0 -> "Das Bild konnte nicht geladen werden. Bitte ein anderes auswählen."
+                        failed > 0 -> "$failed Bild(er) konnten nicht geladen werden."
+                        else -> null
+                    },
+                )
+            }
+            if (imported > 0) onDone()
         }
     }
+
+    fun clearMessage() = _state.update { it.copy(message = null) }
 
     private fun checkQuality(path: String) {
         viewModelScope.launch {

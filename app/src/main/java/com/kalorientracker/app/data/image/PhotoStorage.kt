@@ -28,7 +28,9 @@ class PhotoStorage @Inject constructor(
     suspend fun importFromUri(uri: Uri): String? = withContext(Dispatchers.IO) {
         val resolver = context.contentResolver
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) } ?: return@withContext null
+        // With inJustDecodeBounds the decoder always returns null; only the stream itself can be missing.
+        val stream = runCatching { resolver.openInputStream(uri) }.getOrNull() ?: return@withContext null
+        stream.use { BitmapFactory.decodeStream(it, null, bounds) }
         if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@withContext null
 
         val options = BitmapFactory.Options().apply {

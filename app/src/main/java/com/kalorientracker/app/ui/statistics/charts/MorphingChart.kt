@@ -68,6 +68,8 @@ fun MorphingChart(
     smooth: Boolean = true,
     height: Dp = 180.dp,
     summary: String? = null,
+    showTitle: Boolean = true,
+    trailing: (@Composable () -> Unit)? = null,
     format: (Double) -> String = { it.roundToInt().toString() },
 ) {
     val haptics = LocalHaptics.current
@@ -97,18 +99,21 @@ fun MorphingChart(
     val selectedPoint = selected?.let { points.getOrNull(it) }
 
     Column(modifier) {
-        Row(verticalAlignment = Alignment.Bottom) {
-            SectionLabel(title, Modifier.weight(1f))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (showTitle) SectionLabel(title) else Spacer(Modifier.height(0.dp))
+            Spacer(Modifier.weight(1f))
             val readout = when {
                 selectedPoint != null -> "${selectedPoint.label} · ${selectedPoint.value?.let(format) ?: "–"}"
                 summary != null -> summary
                 else -> ""
             }
             Text(readout, style = MaterialTheme.typography.labelMedium, color = Palette.TextSecondary)
+            trailing?.invoke()
         }
         Spacer(Modifier.height(10.dp))
+        val empty = values.all { it == null }
         Box(Modifier.fillMaxWidth().height(height)) {
-            if (values.all { it == null }) {
+            if (empty) {
                 Text(
                     "Noch keine Daten in diesem Zeitraum",
                     style = MaterialTheme.typography.bodySmall,
@@ -149,9 +154,13 @@ fun MorphingChart(
                 val span = (axisMax - axisMin).takeIf { it > 0f } ?: 1f
                 fun yFor(v: Double): Float = plotBottom - ((v.toFloat() - axisMin) / span) * plotHeight
 
+                val n = points.size
+                if (empty) {
+                    drawLine(Palette.Grid, Offset(plotLeft, plotBottom), Offset(size.width, plotBottom), strokeWidth = 1.dp.toPx())
+                    return@Canvas
+                }
                 drawGrid(plotLeft, plotTop, plotBottom, axisMin, axisMax, measurer, axisStyle, format)
 
-                val n = points.size
                 if (n > 0) {
                     when (type) {
                         ChartType.BAR -> drawBarSeries(points, color, morph, progress.value, plotLeft, plotWidth, ::yFor, yFor(axisMin.toDouble()), selected)
@@ -195,13 +204,11 @@ private fun DrawScope.drawGrid(
     style: TextStyle,
     format: (Double) -> String,
 ) {
-    for (i in 0..2) {
-        val fraction = i / 2f
-        val y = bottom - fraction * (bottom - top)
-        drawLine(Palette.Grid, Offset(left, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
-        val value = min + fraction * (max - min)
+    drawLine(Palette.Grid, Offset(left, bottom), Offset(size.width, bottom), strokeWidth = 1.dp.toPx())
+    for ((value, y) in listOf(min to bottom, max to top)) {
         val layout = measurer.measure(format(value.toDouble()), style)
-        drawText(layout, topLeft = Offset(left - layout.size.width - 6.dp.toPx(), y - layout.size.height / 2f))
+        val textY = (y - layout.size.height / 2f).coerceIn(0f, size.height - layout.size.height)
+        drawText(layout, topLeft = Offset(left - layout.size.width - 8.dp.toPx(), textY))
     }
 }
 
@@ -236,8 +243,8 @@ private fun DrawScope.drawBarSeries(
 ) {
     val n = points.size
     val slot = width / n
-    val gap = if (slot > 6.dp.toPx()) 2.dp.toPx() else 1f
-    val barWidth = (slot - gap).coerceAtLeast(1f)
+    val barWidth = minOf(slot * 0.56f, 14.dp.toPx()).coerceAtLeast(1f)
+    val gap = slot - barWidth
     val radius = minOf(4.dp.toPx(), barWidth / 2)
     points.forEachIndexed { i, point ->
         val value = point.value ?: return@forEachIndexed

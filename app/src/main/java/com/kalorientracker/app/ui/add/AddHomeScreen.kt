@@ -109,6 +109,20 @@ fun AddHomeScreen(
                 OptionTile("Manuell", Icons.Outlined.EditNote, Modifier.weight(1f), onManual)
             }
         }
+        val notice = if (state.importing) "Bilder werden geladen …" else state.message
+        if (notice != null) {
+            item {
+                Text(
+                    notice,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Palette.TextSecondary,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.clearMessage() }
+                        .padding(vertical = 4.dp),
+                )
+            }
+        }
         if (state.ingredients.isNotEmpty()) {
             item {
                 Row(

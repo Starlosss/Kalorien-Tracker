@@ -1,6 +1,10 @@
 package com.kalorientracker.app.ui.navigation
 
 import androidx.compose.animation.AnimatedVisibility
+import com.kalorientracker.app.ui.theme.motionSpec
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.Column
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -297,50 +301,62 @@ private val tabs = listOf(
     Tab(Routes.STATISTICS, Routes.STATISTICS, "Statistik", Icons.Outlined.BarChart),
 )
 
+/** Three equal-width tabs, icon above label, so labels never wrap on narrow screens. */
 @Composable
 private fun BottomBar(currentRoute: String?, onSelect: (String) -> Unit) {
     val haptics = LocalHaptics.current
-    Box(
+    Row(
         Modifier
             .fillMaxWidth()
             .background(Palette.Background)
             .windowInsetsPadding(WindowInsets.navigationBars)
-            .padding(horizontal = 24.dp, vertical = 10.dp),
-        contentAlignment = Alignment.Center,
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clip(RoundedCornerShape(30.dp))
+            .background(Palette.Surface)
+            .border(1.dp, Palette.Outline, RoundedCornerShape(30.dp))
+            .padding(5.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Row(
-            Modifier
-                .clip(RoundedCornerShape(32.dp))
-                .background(Palette.Surface)
-                .border(1.dp, Palette.Outline, RoundedCornerShape(32.dp))
-                .padding(6.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            tabs.forEach { tab ->
-                val selected = currentRoute == tab.route
-                val isAdd = tab.graphRoute == Routes.ADD_GRAPH
-                Row(
-                    Modifier
-                        .clip(RoundedCornerShape(26.dp))
-                        .background(if (selected) Palette.TextPrimary else Color.Transparent)
-                        .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
-                            if (!selected) haptics.perform(HapticEvent.Tap)
-                            onSelect(tab.graphRoute)
-                        }
-                        .padding(horizontal = 18.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    val fg = if (selected) Palette.Background else Palette.TextSecondary
-                    if (isAdd && !selected) {
-                        Box(Modifier.size(22.dp).clip(CircleShape).background(Palette.TextPrimary), contentAlignment = Alignment.Center) {
-                            Icon(tab.icon, contentDescription = null, tint = Palette.Background, modifier = Modifier.size(16.dp))
-                        }
-                    } else {
-                        Icon(tab.icon, contentDescription = null, tint = fg, modifier = Modifier.size(20.dp))
+        tabs.forEach { tab ->
+            val selected = currentRoute == tab.route
+            val isAdd = tab.graphRoute == Routes.ADD_GRAPH
+            val background by animateColorAsState(
+                if (selected) Palette.TextPrimary else Color.Transparent,
+                motionSpec(Motion.snappy()),
+                label = "tabBackground",
+            )
+            val fg by animateColorAsState(
+                if (selected) Palette.Background else Palette.TextSecondary,
+                motionSpec(Motion.snappy()),
+                label = "tabContent",
+            )
+            Column(
+                Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(background)
+                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
+                        if (!selected) haptics.perform(HapticEvent.Tap)
+                        onSelect(tab.graphRoute)
                     }
-                    Spacer(Modifier.size(8.dp))
-                    Text(tab.label, style = MaterialTheme.typography.labelLarge, color = fg)
+                    .padding(vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                if (isAdd && !selected) {
+                    Box(Modifier.size(22.dp).clip(CircleShape).background(Palette.TextPrimary), contentAlignment = Alignment.Center) {
+                        Icon(tab.icon, contentDescription = null, tint = Palette.Background, modifier = Modifier.size(16.dp))
+                    }
+                } else {
+                    Icon(tab.icon, contentDescription = null, tint = fg, modifier = Modifier.size(22.dp))
                 }
+                Spacer(Modifier.size(3.dp))
+                Text(
+                    tab.label,
+                    style = MaterialTheme.typography.labelLarge.copy(fontSize = 12.sp, lineHeight = 14.sp),
+                    color = fg,
+                    maxLines = 1,
+                    softWrap = false,
+                )
             }
         }
     }
