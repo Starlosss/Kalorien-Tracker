@@ -2,9 +2,7 @@ package com.kalorientracker.app.ui.add.camera
 
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -41,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -51,6 +50,8 @@ import com.kalorientracker.app.ui.add.AddFlowViewModel
 import com.kalorientracker.app.ui.common.PrimaryButton
 import com.kalorientracker.app.ui.theme.HapticEvent
 import com.kalorientracker.app.ui.theme.LocalHaptics
+import com.kalorientracker.app.ui.theme.Motion
+import com.kalorientracker.app.ui.theme.motionSpec
 import com.kalorientracker.app.ui.theme.Palette
 import java.io.File
 
@@ -180,8 +181,10 @@ fun CameraScreen(
                 Box(Modifier.weight(1f))
                 ShutterButton(enabled = permission.granted && !capturing, onClick = ::capture)
                 Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
-                    AnimatedVisibility(state.photos.isNotEmpty(), enter = fadeIn(), exit = fadeOut()) {
-                        PrimaryButton("Weiter", onContinue)
+                    val hasPhotos = state.photos.isNotEmpty()
+                    val alpha by animateFloatAsState(if (hasPhotos) 1f else 0f, motionSpec(Motion.enter()), label = "continue")
+                    if (hasPhotos || alpha > 0f) {
+                        PrimaryButton("Weiter", onContinue, Modifier.graphicsLayer { this.alpha = alpha }, enabled = hasPhotos)
                     }
                 }
             }
