@@ -24,6 +24,7 @@ data class AppSettings(
     val showTargetWeightLine: Boolean = true,
     val recalibrationSnoozedUntilDay: Long = 0,
     val seedVersion: Int = 0,
+    val aiEnabled: Boolean = true,
 )
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -41,6 +42,7 @@ class SettingsRepository @Inject constructor(
         val targetWeightLine = booleanPreferencesKey("target_weight_line")
         val recalibrationSnooze = longPreferencesKey("recalibration_snoozed_until")
         val seedVersion = intPreferencesKey("seed_version")
+        val aiEnabled = booleanPreferencesKey("ai_enabled")
     }
 
     val settings: Flow<AppSettings> = context.dataStore.data.map { p ->
@@ -53,6 +55,7 @@ class SettingsRepository @Inject constructor(
             showTargetWeightLine = p[Keys.targetWeightLine] ?: true,
             recalibrationSnoozedUntilDay = p[Keys.recalibrationSnooze] ?: 0L,
             seedVersion = p[Keys.seedVersion] ?: 0,
+            aiEnabled = p[Keys.aiEnabled] ?: true,
         )
     }
 
@@ -65,6 +68,7 @@ class SettingsRepository @Inject constructor(
     suspend fun setSmoothCharts(value: Boolean) = context.dataStore.edit { it[Keys.smoothCharts] = value }
     suspend fun setShowTargetWeightLine(value: Boolean) = context.dataStore.edit { it[Keys.targetWeightLine] = value }
     suspend fun snoozeRecalibration(untilEpochDay: Long) = context.dataStore.edit { it[Keys.recalibrationSnooze] = untilEpochDay }
+    suspend fun setAiEnabled(value: Boolean) = context.dataStore.edit { it[Keys.aiEnabled] = value }
     suspend fun setSeedVersion(value: Int) = context.dataStore.edit { it[Keys.seedVersion] = value }
 
     suspend fun restore(settings: AppSettings) = context.dataStore.edit {

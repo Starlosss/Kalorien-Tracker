@@ -3,6 +3,8 @@ package com.kalorientracker.app.ui.add
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kalorientracker.app.data.ai.ModelManager
+import com.kalorientracker.app.data.ai.ModelState
 import com.kalorientracker.app.data.analyzer.AnalysisContext
 import com.kalorientracker.app.data.analyzer.AnalysisInput
 import com.kalorientracker.app.data.analyzer.AnalysisResult
@@ -39,6 +41,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -118,7 +121,12 @@ class AddFlowViewModel @Inject constructor(
     private val meals: MealRepository,
     private val profiles: ProfileRepository,
     private val photoStorage: PhotoStorage,
+    private val models: ModelManager,
 ) : ViewModel() {
+
+    /** Download state of the on-device vision model, to offer setup where photos are taken. */
+    val aiState: StateFlow<ModelState> = models.state
+
 
     private val _state = MutableStateFlow(AddFlowState())
     val state: StateFlow<AddFlowState> = _state.asStateFlow()
@@ -199,9 +207,12 @@ class AddFlowViewModel @Inject constructor(
                     analyzer.analyze(AnalysisInput(s.photos, s.description, meals.learningHints()))
                 }
             }
+            val slow = s.photos.isNotEmpty() && models.state.value is ModelState.Ready
             for (step in 0 until ANALYSIS_STEPS) {
                 _state.update { it.copy(analysisStep = step) }
-                delay(STEP_MS)
+                if (step == ANALYSIS_STEPS - 1) break
+                val finished = withTimeoutOrNull(if (slow) SLOW_STEP_MS else STEP_MS) { job.await() } != null
+                if (finished) delay(FAST_STEP_MS)
             }
             val result = job.await().getOrNull()
             if (result == null) {
@@ -422,6 +433,8 @@ class AddFlowViewModel @Inject constructor(
     companion object {
         const val ANALYSIS_STEPS = 5
         const val STEP_MS = 420L
+        const val SLOW_STEP_MS = 4_000L
+        const val FAST_STEP_MS = 140L
         const val MAX_PHOTOS = 6
 
         val analysisStepLabels = listOf(

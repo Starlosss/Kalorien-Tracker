@@ -3,6 +3,8 @@ package com.kalorientracker.app.ui.settings
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kalorientracker.app.data.ai.ModelManager
+import com.kalorientracker.app.data.ai.ModelState
 import com.kalorientracker.app.data.backup.BackupManager
 import com.kalorientracker.app.data.image.PhotoStorage
 import com.kalorientracker.app.data.repository.MealRepository
@@ -50,6 +52,7 @@ class SettingsViewModel @Inject constructor(
     private val meals: MealRepository,
     private val backup: BackupManager,
     private val photos: PhotoStorage,
+    private val models: ModelManager,
 ) : ViewModel() {
 
     private val tdee = CalculateTdeeUseCase()
@@ -73,6 +76,30 @@ class SettingsViewModel @Inject constructor(
 
     private val _photoStats = MutableStateFlow(0 to 0L)
     val photoStats: StateFlow<Pair<Int, Long>> = _photoStats.asStateFlow()
+
+    // --- On-device AI model ------------------------------------------------------------------
+
+    val modelState: StateFlow<ModelState> = models.state
+
+    private val _wifiOnly = MutableStateFlow(models.wifiOnly)
+    val wifiOnly: StateFlow<Boolean> = _wifiOnly.asStateFlow()
+
+    val deviceRamGb: Double get() = models.deviceRamGb
+    val freeStorageBytes: Long get() = models.freeStorageBytes
+
+    fun refreshModel() = models.refresh()
+    fun downloadModel() = models.start()
+    fun cancelModelDownload() = models.cancel()
+    fun deleteModel() = models.delete()
+
+    fun setWifiOnly(value: Boolean) {
+        models.wifiOnly = value
+        _wifiOnly.value = value
+    }
+
+    fun setAiEnabled(value: Boolean) {
+        viewModelScope.launch { settingsRepository.setAiEnabled(value) }
+    }
 
     fun refreshPhotoStats() {
         _photoStats.value = photos.stats()

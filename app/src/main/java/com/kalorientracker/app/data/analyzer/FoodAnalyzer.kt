@@ -49,6 +49,9 @@ data class AnalysisContext(
     val photoCount: Int,
     val ingredients: List<RecognizedIngredient>,
     val corrections: List<CorrectionHint>,
+    val questions: List<FollowUpQuestion> = emptyList(),
+    /** Which analyzer produced this result, so follow-up answers go back to the same one. */
+    val source: String = "stub",
 )
 
 data class AnalysisResult(

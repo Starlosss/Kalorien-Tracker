@@ -43,6 +43,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import com.kalorientracker.app.data.ai.ModelState
 import com.kalorientracker.app.ui.add.AddFlowViewModel
 import com.kalorientracker.app.ui.add.AnalysisPhase
 import com.kalorientracker.app.ui.common.PrimaryButton
@@ -103,6 +104,15 @@ fun AnalyzingScreen(
         }
         AddFlowViewModel.analysisStepLabels.forEachIndexed { index, label ->
             StepRow(label, done = index < state.analysisStep, active = index == state.analysisStep)
+        }
+        val aiState by viewModel.aiState.collectAsStateWithLifecycle()
+        if (aiState is ModelState.Ready && state.photos.isNotEmpty()) {
+            Spacer(Modifier.height(20.dp))
+            Text(
+                "Die KI arbeitet auf deinem Gerät – das kann bis zu einer halben Minute dauern. Deine Fotos verlassen das Handy nicht.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Palette.TextTertiary,
+            )
         }
     }
 }

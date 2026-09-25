@@ -78,7 +78,7 @@ class StubFoodAnalyzer(
         }
 
         val questions = buildQuestions(tokens, matched.keys, needsOil && !oilMentioned).take(MAX_QUESTIONS)
-        val context = AnalysisContext(input.description, input.photoPaths.size, ingredients, input.corrections)
+        val context = AnalysisContext(input.description, input.photoPaths.size, ingredients, input.corrections, questions)
         return AnalysisResult(
             mealName = mealName(input.description, ingredients),
             ingredients = ingredients,

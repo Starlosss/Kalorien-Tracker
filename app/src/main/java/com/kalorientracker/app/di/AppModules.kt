@@ -3,7 +3,7 @@ package com.kalorientracker.app.di
 import android.content.Context
 import androidx.room.Room
 import com.kalorientracker.app.data.analyzer.FoodAnalyzer
-import com.kalorientracker.app.data.analyzer.StubFoodAnalyzer
+import com.kalorientracker.app.data.ai.HybridFoodAnalyzer
 import com.kalorientracker.app.data.db.AppDatabase
 import com.kalorientracker.app.data.db.FoodDao
 import com.kalorientracker.app.data.db.GoalTargetsDao
@@ -70,8 +70,7 @@ abstract class BindingsModule {
 /** Swap the vision model here. Everything else only depends on [FoodAnalyzer]. */
 @Module
 @InstallIn(SingletonComponent::class)
-object AnalyzerModule {
-    @Provides
-    @Singleton
-    fun foodAnalyzer(): FoodAnalyzer = StubFoodAnalyzer()
+abstract class AnalyzerModule {
+    @Binds
+    abstract fun foodAnalyzer(impl: HybridFoodAnalyzer): FoodAnalyzer
 }

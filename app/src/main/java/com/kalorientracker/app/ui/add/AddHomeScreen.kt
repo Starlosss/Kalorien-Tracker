@@ -42,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.kalorientracker.app.data.ai.ModelState
 import com.kalorientracker.app.domain.model.Meal
 import com.kalorientracker.app.ui.common.Fmt
 import com.kalorientracker.app.ui.common.ScreenHeader
@@ -61,8 +62,10 @@ fun AddHomeScreen(
     onBarcode: () -> Unit,
     onManual: () -> Unit,
     onReview: () -> Unit,
+    onSetupAi: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val aiState by viewModel.aiState.collectAsStateWithLifecycle()
     val haptics = LocalHaptics.current
     val gallery = rememberLauncherForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(AddFlowViewModel.MAX_PHOTOS),
@@ -107,6 +110,34 @@ fun AddHomeScreen(
                 }
                 OptionTile("Barcode", Icons.Outlined.QrCodeScanner, Modifier.weight(1f), onBarcode)
                 OptionTile("Manuell", Icons.Outlined.EditNote, Modifier.weight(1f), onManual)
+            }
+        }
+        if (aiState !is ModelState.Ready) {
+            item {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(20.dp))
+                        .border(1.dp, Palette.Outline, RoundedCornerShape(20.dp))
+                        .clickable { haptics.perform(HapticEvent.Tap); onSetupAi() }
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        SectionLabel("Foto-KI")
+                        val downloading = aiState as? ModelState.Downloading
+                        Text(
+                            if (downloading != null) "Modell wird geladen · ${(downloading.progress * 100).toInt()} %" else "Erkennung aus Fotos einrichten",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = Palette.TextPrimary,
+                        )
+                        Text(
+                            "Gemma analysiert Fotos direkt auf dem Gerät. Einmalig 2,6 GB, danach offline.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Palette.TextTertiary,
+                        )
+                    }
+                }
             }
         }
         val notice = if (state.importing) "Bilder werden geladen …" else state.message

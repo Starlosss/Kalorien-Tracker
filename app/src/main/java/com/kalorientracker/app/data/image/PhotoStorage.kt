@@ -68,6 +68,37 @@ class PhotoStorage @Inject constructor(
         }
     }
 
+    /**
+     * Upright, downscaled temporary copy for the vision model. Camera files carry their rotation
+     * only as EXIF, which the model would ignore.
+     */
+    suspend fun analysisCopy(path: String, maxEdge: Int = ANALYSIS_MODEL_EDGE): File? = withContext(Dispatchers.IO) {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(path, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@withContext null
+        val options = BitmapFactory.Options().apply {
+            inSampleSize = sampleSize(maxOf(bounds.outWidth, bounds.outHeight), maxEdge)
+        }
+        val decoded = BitmapFactory.decodeFile(path, options) ?: return@withContext null
+        val rotation = runCatching { exifRotation(ExifInterface(path)) }.getOrDefault(0)
+        val longest = maxOf(decoded.width, decoded.height)
+        val scale = if (longest > maxEdge) maxEdge.toFloat() / longest else 1f
+        val matrix = Matrix().apply {
+            if (scale != 1f) postScale(scale, scale)
+            if (rotation != 0) postRotate(rotation.toFloat())
+        }
+        val prepared = if (scale != 1f || rotation != 0) {
+            Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, matrix, true)
+        } else {
+            decoded
+        }
+        val out = File(context.cacheDir, "analysis_${UUID.randomUUID().toString().take(8)}.jpg")
+        out.outputStream().use { prepared.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+        if (prepared !== decoded) prepared.recycle()
+        decoded.recycle()
+        out
+    }
+
     fun delete(path: String) {
         val file = File(path)
         if (file.parentFile?.canonicalPath == directory.canonicalPath) file.delete()
@@ -88,6 +119,7 @@ class PhotoStorage @Inject constructor(
         const val DIR = "photos"
         private const val MAX_EDGE = 1600
         private const val ANALYSIS_EDGE = 256
+        const val ANALYSIS_MODEL_EDGE = 768
 
         private fun sampleSize(longestEdge: Int, target: Int): Int {
             var sample = 1

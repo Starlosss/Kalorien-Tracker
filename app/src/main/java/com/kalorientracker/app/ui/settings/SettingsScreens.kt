@@ -39,6 +39,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.kalorientracker.app.data.ai.ModelManager
+import com.kalorientracker.app.data.ai.ModelState
 import com.kalorientracker.app.domain.model.Goal
 import com.kalorientracker.app.domain.model.Sex
 import com.kalorientracker.app.domain.model.SportActivity
@@ -112,6 +114,7 @@ fun SettingsSectionScreen(
             when (section) {
                 SettingsSection.PROFILE -> ProfileSection(state.profile, viewModel::saveProfile)
                 SettingsSection.PLAN -> PlanSection(state, viewModel)
+                SettingsSection.AI -> AiSection(state.settings.aiEnabled, viewModel)
                 SettingsSection.TRAINING -> TrainingSection(state, onOpenWorkout)
                 SettingsSection.DATA -> DataSection(state.learningCount, viewModel)
                 SettingsSection.PRIVACY -> PrivacySection(state.settings.onlineLookupEnabled, viewModel)
@@ -385,7 +388,7 @@ private fun PrivacySection(onlineEnabled: Boolean, vm: SettingsViewModel) {
             Text("Alle deine Daten und Fotos bleiben auf deinem Gerät.", style = MaterialTheme.typography.titleMedium, color = Palette.TextPrimary)
             Spacer(Modifier.height(8.dp))
             Text(
-                "Es gibt keinen Account, keine Anmeldung und keine Synchronisation. Die Essenserkennung läuft lokal. Fotos werden nie automatisch an einen Server geschickt.",
+                "Es gibt keinen Account, keine Anmeldung und keine Synchronisation. Die Foto-Erkennung (Gemma) läuft vollständig auf dem Gerät; das Modell wird dafür nur einmalig von Hugging Face geladen. Fotos werden nie an einen Server geschickt.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Palette.TextSecondary,
             )
@@ -410,6 +413,97 @@ private fun PrivacySection(onlineEnabled: Boolean, vm: SettingsViewModel) {
             text = { Text("Mahlzeiten und Nährwerte bleiben erhalten, nur die Bilder werden entfernt.", color = Palette.TextSecondary) },
             confirmButton = { TextButton(onClick = { confirm = false; vm.deleteAllPhotos() }) { Text("Löschen", color = Palette.Signal) } },
             dismissButton = { TextButton(onClick = { confirm = false }) { Text("Abbrechen", color = Palette.TextSecondary) } },
+        )
+    }
+}
+
+@Composable
+private fun AiSection(aiEnabled: Boolean, vm: SettingsViewModel) {
+    val state by vm.modelState.collectAsStateWithLifecycle()
+    val wifiOnly by vm.wifiOnly.collectAsStateWithLifecycle()
+    var confirmDelete by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { vm.refreshModel() }
+    val ram = vm.deviceRamGb
+
+    PlainCard(Modifier.fillMaxWidth()) {
+        Column {
+            Text(ModelManager.MODEL_NAME, style = MaterialTheme.typography.titleLarge, color = Palette.TextPrimary)
+            Text("Google · Apache 2.0 · läuft komplett auf deinem Gerät", style = MaterialTheme.typography.bodySmall, color = Palette.TextTertiary)
+            Spacer(Modifier.height(10.dp))
+            Text(
+                "Erkennt Gerichte und Zutaten auf deinen Fotos, schätzt Mengen und stellt Rückfragen. " +
+                    "Das Modell (2,6 GB) wird einmalig geladen, danach funktioniert alles offline. Eine Analyse dauert je nach Gerät etwa 10–30 Sekunden.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Palette.TextSecondary,
+            )
+        }
+    }
+    Spacer(Modifier.height(16.dp))
+    if (ram < ModelManager.RECOMMENDED_RAM_GB) {
+        Text(
+            "Dein Gerät hat ${Fmt.one(ram)} GB Arbeitsspeicher. Empfohlen sind mindestens 6 GB – die Analyse kann langsam sein oder abbrechen.",
+            style = MaterialTheme.typography.bodySmall,
+            color = Palette.TextPrimary,
+        )
+        Spacer(Modifier.height(12.dp))
+    }
+    when (val s = state) {
+        ModelState.NotDownloaded, is ModelState.Failed -> {
+            if (s is ModelState.Failed) {
+                Text(s.reason, style = MaterialTheme.typography.bodyMedium, color = Palette.TextPrimary)
+                Spacer(Modifier.height(10.dp))
+            }
+            ToggleRow("Nur über WLAN laden", wifiOnly, vm::setWifiOnly, "Empfohlen – der Download ist 2,6 GB groß")
+            Spacer(Modifier.height(8.dp))
+            PrimaryButton("Modell herunterladen (2,6 GB)", vm::downloadModel, Modifier.fillMaxWidth(), haptic = HapticEvent.Confirm)
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Frei: ${Fmt.one(vm.freeStorageBytes / 1_073_741_824.0)} GB",
+                style = MaterialTheme.typography.bodySmall,
+                color = Palette.TextTertiary,
+            )
+        }
+        is ModelState.Downloading -> {
+            SectionLabel(if (s.waitingForWifi) "Wartet auf WLAN" else "Wird geladen")
+            Spacer(Modifier.height(8.dp))
+            androidx.compose.material3.LinearProgressIndicator(
+                progress = { s.progress },
+                modifier = Modifier.fillMaxWidth(),
+                color = Palette.TextPrimary,
+                trackColor = Palette.Track,
+                drawStopIndicator = {},
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "${Fmt.one(s.downloadedBytes / 1_073_741_824.0)} von ${Fmt.one(s.totalBytes / 1_073_741_824.0)} GB · ${(s.progress * 100).toInt()} %",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Palette.TextSecondary,
+            )
+            Text(
+                "Der Download läuft im Hintergrund weiter, auch wenn du die App verlässt.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Palette.TextTertiary,
+            )
+            Spacer(Modifier.height(12.dp))
+            SecondaryButton("Abbrechen", vm::cancelModelDownload, Modifier.fillMaxWidth())
+        }
+        ModelState.Ready -> {
+            Text("Bereit – Fotos werden jetzt auf dem Gerät analysiert.", style = MaterialTheme.typography.titleMedium, color = Palette.TextPrimary)
+            Spacer(Modifier.height(8.dp))
+            ToggleRow("Foto-KI verwenden", aiEnabled, vm::setAiEnabled, "Aus: Schätzung nur aus der Beschreibung")
+            Spacer(Modifier.height(12.dp))
+            SecondaryButton("Modell löschen (2,6 GB freigeben)", { confirmDelete = true }, Modifier.fillMaxWidth())
+        }
+    }
+
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            containerColor = Palette.SurfaceRaised,
+            title = { Text("Modell löschen?", color = Palette.TextPrimary) },
+            text = { Text("Die Foto-Erkennung ist danach erst nach einem erneuten Download wieder verfügbar.", color = Palette.TextSecondary) },
+            confirmButton = { TextButton(onClick = { confirmDelete = false; vm.deleteModel() }) { Text("Löschen", color = Palette.Signal) } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Abbrechen", color = Palette.TextSecondary) } },
         )
     }
 }

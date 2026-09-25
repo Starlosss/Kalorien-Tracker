@@ -6,3 +6,7 @@
 -keep,includedescriptorclasses class com.kalorientracker.app.**$$serializer { *; }
 -keepclassmembers class com.kalorientracker.app.** { *** Companion; }
 -keepclasseswithmembers class com.kalorientracker.app.** { kotlinx.serialization.KSerializer serializer(...); }
+
+# LiteRT-LM calls back into these classes from native code and serializes via Gson; ship no consumer rules.
+-keep class com.google.ai.edge.litertlm.** { *; }
+-dontwarn com.google.ai.edge.litertlm.**

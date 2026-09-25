@@ -176,6 +176,7 @@ private fun androidx.navigation.NavGraphBuilder.addFlowGraph(navController: NavH
                 onBarcode = { navController.navigate(Routes.ADD_BARCODE) },
                 onManual = { navController.navigate(Routes.addSearch()) },
                 onReview = { navController.navigate(Routes.ADD_REVIEW) },
+                onSetupAi = { navController.navigate(Routes.settingsSection(SettingsSection.AI)) },
             )
         }
         composable(Routes.ADD_CAMERA) { entry ->

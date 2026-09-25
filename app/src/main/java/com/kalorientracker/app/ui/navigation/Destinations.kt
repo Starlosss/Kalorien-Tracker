@@ -37,6 +37,7 @@ object Routes {
 enum class SettingsSection(val title: String, val subtitle: String) {
     PROFILE("Profil", "Alter, Größe, Gewicht, Aktivität"),
     PLAN("Ernährungsplan", "Ziel, Kalorien und Makronährstoffe"),
+    AI("KI-Erkennung", "Foto-Erkennung mit Gemma auf dem Gerät"),
     TRAINING("Training", "Home-Workout-Plan"),
     DATA("Daten", "Export, Import, Backup, Löschen"),
     PRIVACY("Datenschutz", "Lokale Daten, Fotos, Online-Recherche"),
