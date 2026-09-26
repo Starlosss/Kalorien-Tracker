@@ -83,6 +83,11 @@ class ModelManager @Inject constructor(
         get() = prefs.getBoolean(KEY_WIFI_ONLY, true)
         set(value) = prefs.edit().putBoolean(KEY_WIFI_ONLY, value).apply()
 
+    /** Set once a device has shown it cannot run the model on its GPU, so later runs start on the CPU. */
+    var gpuUnsupported: Boolean
+        get() = prefs.getBoolean(KEY_GPU_UNSUPPORTED, false)
+        set(value) = prefs.edit().putBoolean(KEY_GPU_UNSUPPORTED, value).apply()
+
     /** Total device memory in GB; the model needs roughly 2 GB of free RAM while analysing. */
     val deviceRamGb: Double
         get() {
@@ -184,5 +189,6 @@ class ModelManager @Inject constructor(
         private const val NETWORK_POLL_MS = 5_000L
         private const val KEY_PART = "part_"
         private const val KEY_WIFI_ONLY = "wifi_only"
+        private const val KEY_GPU_UNSUPPORTED = "gpu_unsupported"
     }
 }

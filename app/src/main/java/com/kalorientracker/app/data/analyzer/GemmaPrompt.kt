@@ -188,9 +188,11 @@ object GemmaPrompt {
         val questions = (forced + modelQuestions).distinctBy { it.text.lowercase() }.take(MAX_QUESTIONS)
         if (questions.isNotEmpty()) return questions
 
-        // Nothing was flagged, but an unclear ingredient or a photo without any description still
-        // deserves one question instead of a silent estimate.
-        val uncertain = ingredients.firstOrNull { it.confidence == Confidence.LOW }
+        // The model had nothing to ask. Anything it is not sure about still gets one question –
+        // the one that moves the calories most – instead of a silently accepted estimate.
+        val uncertain = ingredients
+            .filter { it.confidence != Confidence.HIGH }
+            .maxByOrNull { it.per100g.kcal * it.estimatedGrams }
             ?: ingredients.maxByOrNull { it.estimatedGrams }.takeIf { description.isBlank() && photoCount > 0 }
             ?: return emptyList()
         return listOf(

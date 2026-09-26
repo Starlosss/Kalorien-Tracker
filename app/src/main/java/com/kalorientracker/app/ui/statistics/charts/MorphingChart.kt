@@ -179,7 +179,8 @@ fun MorphingChart(
                         pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 5.dp.toPx())),
                     )
                     val layout = measurer.measure(targetLabel, axisStyle)
-                    drawText(layout, topLeft = Offset(size.width - layout.size.width, y - layout.size.height - 2.dp.toPx()))
+                    // Keep the label clear of the screen edge; without the inset it sits flush against it.
+                    drawText(layout, topLeft = Offset(size.width - layout.size.width - 4.dp.toPx(), y - layout.size.height - 2.dp.toPx()))
                 }
 
                 selected?.let { i ->

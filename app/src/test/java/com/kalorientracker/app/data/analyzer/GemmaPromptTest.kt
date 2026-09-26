@@ -173,6 +173,23 @@ class GemmaPromptTest {
     }
 
     @Test
+    fun asksAboutTheIngredientThatMovesTheCaloriesMost() {
+        val raw = """{"gericht":"Reis mit Hähnchen","zutaten":[
+            {"name":"Reis (gekocht)","gramm":300,"sicherheit":"hoch","kcal":130,"protein":2.7,"kohlenhydrate":28,"fett":0.3},
+            {"name":"Paprika","gramm":50,"sicherheit":"mittel","kcal":30,"protein":1,"kohlenhydrate":6,"fett":0.2},
+            {"name":"Sahnesoße","gramm":100,"sicherheit":"mittel","kcal":150,"protein":1.8,"kohlenhydrate":5,"fett":13.5}
+        ],"rueckfragen":[]}"""
+        val result = GemmaPrompt.parse(raw, "Reis mit Paprika und Soße", 1, emptyList())!!
+        assertEquals("Wie viel Sahnesoße war dabei?", result.followUpQuestions.single().text)
+    }
+
+    @Test
+    fun asksNothingWhenTheModelIsSureAboutEverything() {
+        val raw = """{"gericht":"Reis","zutaten":[{"name":"Reis (gekocht)","gramm":200,"sicherheit":"hoch","kcal":130,"protein":2.7,"kohlenhydrate":28,"fett":0.3}],"rueckfragen":[]}"""
+        assertTrue(GemmaPrompt.parse(raw, "200g Reis", 1, emptyList())!!.followUpQuestions.isEmpty())
+    }
+
+    @Test
     fun usersOwnPortionAnswerWinsOverTheModel() {
         val raw = """{"gericht":"Reis","zutaten":[{"name":"Reis (gekocht)","gramm":200,"sicherheit":"hoch","kcal":130,"protein":2.7,"kohlenhydrate":28,"fett":0.3}],"rueckfragen":[]}"""
         val result = GemmaPrompt.parse(raw, "Reis mit Brokkoli", 1, emptyList())!!

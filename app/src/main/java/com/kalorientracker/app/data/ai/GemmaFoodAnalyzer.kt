@@ -46,6 +46,7 @@ class GemmaFoodAnalyzer @Inject constructor(
     private val mutex = Mutex()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var engine: Engine? = null
+    private var usingGpu = false
     private var releaseJob: Job? = null
 
     /** Returns null when the model produced nothing usable; throws when the runtime itself fails. */
@@ -88,9 +89,30 @@ class GemmaFoodAnalyzer @Inject constructor(
         context = analysis.copy(questions = emptyList()),
     )
 
+    /**
+     * Some devices report a working GPU backend but fail on the first inference (a phone without a
+     * usable OpenCL driver, for instance). Falling back only while creating the engine is not
+     * enough, so a GPU failure here switches to CPU and remembers that for next time.
+     */
     private suspend fun generate(parts: List<Content>): String = mutex.withLock {
         releaseJob?.cancel()
-        val engine = engineOrCreate()
+        try {
+            runOn(engineOrCreate(), parts)
+        } catch (t: Throwable) {
+            if (usingGpu) {
+                Log.w(TAG, "GPU inference failed, falling back to CPU", t)
+                models.gpuUnsupported = true
+                closeEngine()
+                runOn(engineOrCreate(), parts)
+            } else {
+                throw t
+            }
+        } finally {
+            scheduleRelease()
+        }
+    }
+
+    private fun runOn(engine: Engine, parts: List<Content>): String {
         val conversation = engine.createConversation(
             ConversationConfig(
                 Contents.of(GemmaPrompt.SYSTEM),
@@ -107,7 +129,7 @@ class GemmaFoodAnalyzer @Inject constructor(
                 true,
             ),
         )
-        try {
+        return try {
             val reply = conversation.sendMessage(
                 Contents.of(parts),
                 emptyMap(),
@@ -121,7 +143,6 @@ class GemmaFoodAnalyzer @Inject constructor(
             reply.contents.contents.filterIsInstance<Content.Text>().joinToString("") { it.text }
         } finally {
             conversation.close()
-            scheduleRelease()
         }
     }
 
@@ -129,11 +150,24 @@ class GemmaFoodAnalyzer @Inject constructor(
         engine?.let { return it }
         val path = models.modelFile?.takeIf { models.isReady() }?.absolutePath
             ?: throw IllegalStateException("KI-Modell ist nicht geladen.")
-        val created = runCatching { create(path, Backend.GPU()) }
-            .onFailure { Log.w(TAG, "GPU backend unavailable, falling back to CPU", it) }
-            .getOrElse { create(path, Backend.CPU()) }
+        val created = if (models.gpuUnsupported) {
+            create(path, Backend.CPU())
+        } else {
+            runCatching { create(path, Backend.GPU()).also { usingGpu = true } }
+                .onFailure {
+                    Log.w(TAG, "GPU backend unavailable, falling back to CPU", it)
+                    models.gpuUnsupported = true
+                }
+                .getOrElse { create(path, Backend.CPU()) }
+        }
         engine = created
         return created
+    }
+
+    private fun closeEngine() {
+        runCatching { engine?.close() }
+        engine = null
+        usingGpu = false
     }
 
     private fun create(path: String, backend: Backend): Engine {
@@ -145,10 +179,7 @@ class GemmaFoodAnalyzer @Inject constructor(
         releaseJob?.cancel()
         releaseJob = scope.launch {
             delay(IDLE_RELEASE_MS)
-            mutex.withLock {
-                engine?.close()
-                engine = null
-            }
+            mutex.withLock { closeEngine() }
         }
     }
 
