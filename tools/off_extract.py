@@ -245,6 +245,16 @@ def load_taxonomy(path: Path) -> dict:
         return json.load(handle)
 
 
+# Drei deutsche Kategorienamen sind in der Open-Food-Facts-Taxonomie falsch
+# geschrieben. "Reise" ist ueber die Suche gar nicht zu finden, weil niemand
+# danach sucht. Korrigiert wird nur die Schreibweise, kein Naehrwert.
+NAME_CORRECTIONS = {
+    "Fruchsäfte": "Fruchtsäfte",
+    "Getrockenete Hülsenfrüchte": "Getrocknete Hülsenfrüchte",
+    "Reise": "Reis",
+}
+
+
 def german_category_names(taxonomy: dict) -> dict:
     """Tag -> deutscher Kategoriename aus der Open-Food-Facts-Taxonomie.
 
@@ -264,6 +274,7 @@ def german_category_names(taxonomy: dict) -> dict:
         if not isinstance(german, str):
             continue
         german = " ".join(german.split())
+        german = NAME_CORRECTIONS.get(german, german)
         if len(german) < MIN_CATEGORY_NAME_LEN:
             continue
         latin = name.get("la")
