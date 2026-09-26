@@ -41,4 +41,5 @@ private val SOURCES = listOf(
     "Sport" to "MET-Werte aus dem Compendium of Physical Activities. Gerechnet wird nur die Energie über dem Ruheumsatz, damit nichts doppelt zählt.",
     "Abnehmen" to "500 kcal Defizit pro Tag, das entspricht etwa 0,5 kg pro Woche. So steht es in der S3-Leitlinie „Prävention und Therapie der Adipositas“.",
     "BMI" to "Einordnung nach der WHO. Der BMI geht nicht in den Kalorienbedarf ein. Er ordnet nur dein Gewicht ein.",
+    "Lebensmitteldaten" to "Die mitgelieferten Lebensmittel und Produkte stammen von Open Food Facts. Diese Daten stehen unter der Open Database License (ODbL).",
 )

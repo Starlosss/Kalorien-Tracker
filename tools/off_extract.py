@@ -47,9 +47,12 @@ MAX_PRODUCTS = 40000          # Obergrenze der Barcode-Tabelle
 MAX_CSV_BYTES = 6 * 1024 * 1024   # products.csv darf 6 MB nicht ueberschreiten
 MIN_CATEGORY_PRODUCTS = 30    # Mindestzahl Produkte je generierter Kategorie
 MAX_CATEGORIES = 1200         # Obergrenze generierter Grundnahrungsmittel
+MIN_CATEGORY_DEPTH = 3        # Abstand zur Wurzel der Taxonomie, darunter sind es Sammeltoepfe
+MAX_CATEGORY_SHARE = 0.05     # Kategorien ueber 5 % aller Produkte sind Sammeltoepfe
 MAX_NAME_LEN = 70             # Namenslaenge in products.csv
 MIN_CATEGORY_NAME_LEN = 3     # kuerzere Kategorienamen werden verworfen
 SERVING_MIN, SERVING_MAX = 1.0, 2000.0   # plausible Portionsgroesse in Gramm
+UNREACHABLE = 10 ** 6         # Ersatzabstand bei einem Zyklus in der Taxonomie
 
 # ---------------------------------------------------------------- SQL
 
@@ -146,6 +149,15 @@ ORDER BY scans DESC, code ASC
 LIMIT __LIMIT__
 """
 
+COMPLETE_COUNT_SQL = """
+, complete AS (
+  SELECT * FROM products
+  WHERE fiber IS NOT NULL AND sugar IS NOT NULL
+    AND saturated IS NOT NULL AND salt IS NOT NULL
+)
+SELECT count(*) FROM complete
+"""
+
 CATEGORIES_SQL = """
 , complete AS (
   SELECT * FROM products
@@ -228,10 +240,19 @@ def csv_field(text: str) -> str:
     return '"' + text + '"' if "," in text else text
 
 
-def german_category_names(path: Path) -> dict:
-    """Tag -> deutscher Kategoriename aus der Open-Food-Facts-Taxonomie."""
+def load_taxonomy(path: Path) -> dict:
     with path.open(encoding="utf-8") as handle:
-        taxonomy = json.load(handle)
+        return json.load(handle)
+
+
+def german_category_names(taxonomy: dict) -> dict:
+    """Tag -> deutscher Kategoriename aus der Open-Food-Facts-Taxonomie.
+
+    Uebersprungen werden Kategorien ohne deutschen Namen, mit einem Namen unter
+    drei Zeichen und solche, deren deutscher Name gleich dem lateinischen Namen
+    ist. Letzteres sind unuebersetzte botanische Gattungsnamen wie "Triticum";
+    danach sucht niemand in einer Kalorien-App.
+    """
     names = {}
     for tag, entry in taxonomy.items():
         if not isinstance(entry, dict):
@@ -245,8 +266,47 @@ def german_category_names(path: Path) -> dict:
         german = " ".join(german.split())
         if len(german) < MIN_CATEGORY_NAME_LEN:
             continue
+        latin = name.get("la")
+        if isinstance(latin, str) and " ".join(latin.split()).lower() == german.lower():
+            continue
         names[tag] = german
     return names
+
+
+def category_depths(taxonomy: dict) -> dict:
+    """Tag -> kuerzester Abstand zu einer Wurzel der Taxonomie.
+
+    Wurzeln haben den Abstand 0. Kleine Abstaende sind Sammeltoepfe wie
+    "Pflanzliche Lebensmittel", die in einer Lebensmittelsuche nur stoeren.
+    """
+    parents = {
+        tag: [p for p in (entry.get("parents") or []) if isinstance(p, str)]
+        for tag, entry in taxonomy.items()
+        if isinstance(entry, dict)
+    }
+    depths = {}
+
+    def depth_of(tag: str, seen: frozenset) -> int:
+        if tag in depths:
+            return depths[tag]
+        if tag in seen:
+            return UNREACHABLE          # Zyklus in der Taxonomie
+        known = [p for p in parents.get(tag, []) if p in parents]
+        if not known:
+            depths[tag] = 0
+            return 0
+        value = 1 + min(depth_of(p, seen | {tag}) for p in known)
+        depths[tag] = value
+        return value
+
+    limit = sys.getrecursionlimit()
+    sys.setrecursionlimit(max(limit, 20000))
+    try:
+        for tag in parents:
+            depth_of(tag, frozenset())
+    finally:
+        sys.setrecursionlimit(limit)
+    return depths
 
 
 # ---------------------------------------------------------------- Ablauf
@@ -318,8 +378,14 @@ def main() -> None:
     foods = list(manual)
     seen = {str(entry["n"]).strip().lower() for entry in manual}
 
-    german = german_category_names(TAXONOMY)
-    print("  " + str(len(german)) + " Kategorien mit deutschem Namen in der Taxonomie")
+    taxonomy = load_taxonomy(TAXONOMY)
+    german = german_category_names(taxonomy)
+    depths = category_depths(taxonomy)
+    print("  " + str(len(german)) + " Kategorien mit brauchbarem deutschem Namen")
+
+    complete_total = con.sql(sql + COMPLETE_COUNT_SQL).fetchone()[0]
+    share_limit = complete_total * MAX_CATEGORY_SHARE
+    print("  " + str(complete_total) + " Produkte mit allen acht Naehrwerten")
 
     cat_rows = con.sql(
         sql + CATEGORIES_SQL.replace("__MIN_N__", str(MIN_CATEGORY_PRODUCTS))
@@ -328,13 +394,21 @@ def main() -> None:
           + str(MIN_CATEGORY_PRODUCTS) + " vollstaendigen Produkten")
 
     generated = 0
+    skipped_shallow = 0
+    skipped_broad = 0
     for row in cat_rows:
         if generated >= MAX_CATEGORIES:
             break
-        (tag, _n, kcal, protein, carbs, fat,
+        (tag, count_n, kcal, protein, carbs, fat,
          fiber, sugar, saturated, salt, serving) = row
         name = german.get(tag)
         if not name:
+            continue
+        if depths.get(tag, 0) < MIN_CATEGORY_DEPTH:
+            skipped_shallow += 1
+            continue
+        if count_n > share_limit:
+            skipped_broad += 1
             continue
         key = name.strip().lower()
         if key in seen:
@@ -366,6 +440,9 @@ def main() -> None:
         print("  wegen 6-MB-Grenze verworfen: " + str(dropped_for_size) + " Zeilen")
     if dropped_empty_name:
         print("  wegen leerem Namen verworfen: " + str(dropped_empty_name) + " Zeilen")
+    print("  uebersprungene Sammeltoepfe: " + str(skipped_shallow)
+          + " zu weit oben in der Taxonomie, " + str(skipped_broad)
+          + " ueber " + str(int(MAX_CATEGORY_SHARE * 100)) + " Prozent aller Produkte")
     print("  base_foods.json: " + str(len(foods)) + " Eintraege ("
           + str(len(manual)) + " handgepflegt + " + str(generated) + " generiert), "
           + str(OUT_JSON.stat().st_size) + " Bytes")
