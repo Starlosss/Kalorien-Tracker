@@ -9,6 +9,7 @@ import com.kalorientracker.app.data.remote.OnlineProductSource
 import com.kalorientracker.app.data.settings.SettingsRepository
 import com.kalorientracker.app.domain.model.Food
 import com.kalorientracker.app.domain.model.FoodSource
+import com.kalorientracker.app.domain.model.Nutrients
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.io.IOException
@@ -99,6 +100,20 @@ class FoodRepository @Inject constructor(
         food.barcode?.let { code -> foodDao.byBarcode(code)?.let { return it.toDomain() } }
         val entity = food.copy(id = 0, source = FoodSource.ONLINE_CACHED).toEntity(System.currentTimeMillis())
         return food.copy(id = foodDao.insert(entity), source = FoodSource.ONLINE_CACHED)
+    }
+
+    /**
+     * Keeps a food the recognizer found but [bestMatch] could not resolve, so it counts as known
+     * next time. Looked up the same way [bestMatch] resolves an exact name (case-insensitively,
+     * through [FoodDao.byName]) to avoid storing a duplicate for a food that already exists under
+     * this name; only truly unmatched names reach here, since callers only invoke this for
+     * ingredients whose [bestMatch] lookup returned nothing.
+     */
+    suspend fun remember(name: String, per100g: Nutrients, servingGrams: Double?): Food {
+        foodDao.byName(name)?.let { return it.toDomain() }
+        val food = Food(name = name, per100g = per100g, servingGrams = servingGrams, source = FoodSource.AI_ESTIMATED)
+        val entity = food.toEntity(System.currentTimeMillis())
+        return food.copy(id = foodDao.insert(entity))
     }
 
     suspend fun addCustom(food: Food): Food {

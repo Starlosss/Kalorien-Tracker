@@ -411,6 +411,11 @@ class AddFlowViewModel @Inject constructor(
             val targets = profiles.getTargets()
             val before = meals.observeMeals(today.toEpochDay(), today.toEpochDay()).first().map { it.totals }.sum()
             meals.save(meal, corrections)
+            // Only now, with the meal safely written, learn the ingredients the user actually
+            // kept: a draft that gets discarded before this point leaves nothing behind.
+            s.ingredients.filter { it.foodId == null }.forEach { draft ->
+                foods.remember(draft.name, draft.per100g, s.effectiveGrams(draft))
+            }
             val after = before + meal.totals
             val goalReached = targets != null && (
                 crossed(before.protein, after.protein, targets.proteinG.toDouble()) ||

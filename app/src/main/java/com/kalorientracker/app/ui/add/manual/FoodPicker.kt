@@ -161,6 +161,7 @@ private fun FoodRow(food: Food, onClick: () -> Unit) {
                 FoodSource.BASE_DB -> null
                 FoodSource.USER_ADDED -> "Eigenes"
                 FoodSource.ONLINE_CACHED -> "Produkt"
+                FoodSource.AI_ESTIMATED -> "Erkannt"
             }
             Text(
                 listOfNotNull(source, "P ${Fmt.one(food.per100g.protein)} · K ${Fmt.one(food.per100g.carbs)} · F ${Fmt.one(food.per100g.fat)}").joinToString(" · "),

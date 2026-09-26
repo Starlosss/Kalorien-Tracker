@@ -26,7 +26,7 @@ enum class Confidence(val label: String) {
     LOW("Unsicher"),
 }
 
-enum class FoodSource { BASE_DB, USER_ADDED, ONLINE_CACHED }
+enum class FoodSource { BASE_DB, USER_ADDED, ONLINE_CACHED, AI_ESTIMATED }
 
 enum class Difficulty(val label: String) {
     EASY("Einsteiger"),
