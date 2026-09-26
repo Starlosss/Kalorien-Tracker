@@ -64,7 +64,7 @@ class FoodSearchViewModel @Inject constructor(
             _online.value = when (val r = foods.searchOnline(q)) {
                 is FoodRepository.OnlineSearch.Results ->
                     if (r.foods.isEmpty()) OnlineResults.Unavailable("Online nichts gefunden.") else OnlineResults.Loaded(r.foods)
-                FoodRepository.OnlineSearch.Disabled -> OnlineResults.Unavailable("Online-Recherche ist in den Einstellungen deaktiviert.")
+                FoodRepository.OnlineSearch.Disabled -> OnlineResults.Unavailable("Die Online-Suche ist in den Einstellungen ausgeschaltet.")
                 FoodRepository.OnlineSearch.Offline -> OnlineResults.Unavailable("Keine Internetverbindung. Die lokale Suche funktioniert weiterhin.")
             }
         }

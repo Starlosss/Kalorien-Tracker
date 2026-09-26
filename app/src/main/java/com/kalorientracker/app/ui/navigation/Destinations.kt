@@ -40,6 +40,6 @@ enum class SettingsSection(val title: String, val subtitle: String) {
     AI("KI-Erkennung", "Foto-Erkennung mit Gemma auf dem Gerät"),
     TRAINING("Training", "Home-Workout-Plan"),
     DATA("Daten", "Export, Import, Backup, Löschen"),
-    PRIVACY("Datenschutz", "Lokale Daten, Fotos, Online-Recherche"),
+    PRIVACY("Datenschutz", "Daten auf dem Gerät, Fotos, Online-Suche"),
     APPEARANCE("Darstellung", "Animationen, Haptik, Diagramme"),
 }

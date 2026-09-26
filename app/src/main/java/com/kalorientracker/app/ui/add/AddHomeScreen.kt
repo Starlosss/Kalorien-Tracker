@@ -96,7 +96,7 @@ fun AddHomeScreen(
                     Text("Foto aufnehmen", style = MaterialTheme.typography.headlineMedium, color = Palette.TextPrimary)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Fotografieren, kurz beschreiben – die Analyse passiert auf deinem Gerät.",
+                        "Fotografieren, kurz beschreiben. Die Analyse läuft auf deinem Gerät.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Palette.TextSecondary,
                     )
@@ -124,7 +124,7 @@ fun AddHomeScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(Modifier.weight(1f)) {
-                        SectionLabel("Foto-KI")
+                        SectionLabel("Foto-Erkennung")
                         val downloading = aiState as? ModelState.Downloading
                         Text(
                             if (downloading != null) "Modell wird geladen · ${(downloading.progress * 100).toInt()} %" else "Erkennung aus Fotos einrichten",
@@ -132,7 +132,7 @@ fun AddHomeScreen(
                             color = Palette.TextPrimary,
                         )
                         Text(
-                            "Gemma analysiert Fotos direkt auf dem Gerät. Einmalig 2,6 GB, danach offline.",
+                            "Gemma analysiert Fotos direkt auf dem Gerät. Einmal 2,4 GB laden, danach offline.",
                             style = MaterialTheme.typography.bodySmall,
                             color = Palette.TextTertiary,
                         )

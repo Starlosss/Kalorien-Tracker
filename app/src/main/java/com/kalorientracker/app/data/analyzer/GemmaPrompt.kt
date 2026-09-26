@@ -155,12 +155,12 @@ object GemmaPrompt {
         val mealName = root.string("gericht")?.trim()?.takeIf { it.length >= 2 }?.take(MAX_NAME)
             ?: StubFoodAnalyzer.mealName(description, ingredients)
         val notes = buildList {
-            add("Erkannt mit Gemma auf deinem Gerät – bitte Mengen kurz prüfen.")
+            add("Erkannt mit Gemma auf deinem Gerät. Bitte die Mengen kurz prüfen.")
             if (missing.isNotEmpty()) {
                 add("Auf dem Foto nicht erkannt, aus deiner Beschreibung ergänzt: ${missing.joinToString { it.shortName }}.")
             }
-            if (photoCount >= 2) add("$photoCount Fotos wurden gemeinsam ausgewertet.")
-            if (usedCorrections.isNotEmpty()) add("Deine üblichen Portionen wurden berücksichtigt: ${usedCorrections.joinToString()}.")
+            if (photoCount >= 2) add("Alle $photoCount Fotos wurden zusammen ausgewertet.")
+            if (usedCorrections.isNotEmpty()) add("Deine üblichen Portionen sind eingerechnet: ${usedCorrections.joinToString()}.")
         }
         return AnalysisResult(
             mealName = if (description.isNotBlank()) StubFoodAnalyzer.mealName(description, ingredients) else mealName,

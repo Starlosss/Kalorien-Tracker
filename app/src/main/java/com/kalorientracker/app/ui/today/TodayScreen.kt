@@ -263,7 +263,7 @@ private fun RecalibrationCard(
             SectionLabel("Plan-Vorschlag")
             Spacer(Modifier.height(8.dp))
             Text(
-                "Dein tatsächlicher Verbrauch scheint von der bisherigen Berechnung abzuweichen. Soll dein Ziel angepasst werden?",
+                "Dein Verbrauch weicht von der bisherigen Berechnung ab. Soll die App dein Ziel anpassen?",
                 style = MaterialTheme.typography.bodyLarge,
                 color = Palette.TextPrimary,
             )

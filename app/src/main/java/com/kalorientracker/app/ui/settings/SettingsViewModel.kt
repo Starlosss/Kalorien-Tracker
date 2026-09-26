@@ -179,7 +179,7 @@ class SettingsViewModel @Inject constructor(
             val totals = meals.observeDailyTotals(today - SuggestRecalibrationUseCase.WINDOW_DAYS, today).first()
             val suggestion = recalibrate(weights, totals, targets, profile.goal, profile.sex, today)
             if (suggestion == null) {
-                _message.value = "Noch keine Anpassung nötig – oder zu wenige Daten (mind. 14 Tage mit Gewicht und Mahlzeiten)."
+                _message.value = "Keine Anpassung nötig, oder es fehlen noch Daten. Dafür braucht die App aus den letzten 28 Tagen mindestens 4 Gewichtseinträge über 14 Tage hinweg und 10 Tage mit Mahlzeiten."
             } else {
                 _proposal.value = PlanProposal(
                     "Beobachtet: Ø ${Fmt.int(suggestion.averageIntakeKcal)} kcal bei ${Fmt.signedKg(suggestion.weeklyWeightChangeKg)} pro Woche. " +
@@ -251,14 +251,14 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             backup.deleteAllPhotos()
             refreshPhotoStats()
-            _message.value = "Alle Fotos wurden gelöscht."
+            _message.value = "Alle Fotos gelöscht."
         }
     }
 
     fun resetLearning() {
         viewModelScope.launch {
             meals.clearLearning()
-            _message.value = "Gelernte Korrekturen wurden zurückgesetzt."
+            _message.value = "Gelernte Korrekturen zurückgesetzt."
         }
     }
 }

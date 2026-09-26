@@ -54,7 +54,7 @@ class HybridFoodAnalyzer @Inject constructor(
             ingredients = context.ingredients,
             followUpQuestions = emptyList(),
             context = context,
-            notes = listOf("Die Antworten konnten nicht automatisch eingearbeitet werden – bitte Zutaten kurz selbst anpassen."),
+            notes = listOf("Deine Antworten konnten nicht eingearbeitet werden. Bitte die Zutaten kurz selbst anpassen."),
         )
     }
 
@@ -62,8 +62,8 @@ class HybridFoodAnalyzer @Inject constructor(
 
     companion object {
         private const val TAG = "HybridFoodAnalyzer"
-        const val NOTE_NOT_SET_UP = "Foto-KI ist noch nicht eingerichtet – geschätzt nur aus der Beschreibung. Einrichten unter Einstellungen → KI-Erkennung."
-        const val NOTE_FAILED = "Die Foto-KI konnte das Bild nicht auswerten – geschätzt aus der Beschreibung."
-        const val NOTE_UNCLEAR = "Die Foto-KI war sich unsicher – geschätzt aus der Beschreibung. Bitte Zutaten prüfen."
+        const val NOTE_NOT_SET_UP = "Die Foto-Erkennung ist noch nicht eingerichtet. Die Schätzung kommt nur aus deiner Beschreibung. Einrichten unter Einstellungen → KI-Erkennung."
+        const val NOTE_FAILED = "Die Foto-Erkennung konnte das Bild nicht auswerten. Die Schätzung kommt aus deiner Beschreibung."
+        const val NOTE_UNCLEAR = "Die Foto-Erkennung war sich unsicher. Die Schätzung kommt aus deiner Beschreibung. Bitte die Zutaten prüfen."
     }
 }

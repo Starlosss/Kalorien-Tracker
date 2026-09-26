@@ -60,7 +60,7 @@ class StubFoodAnalyzer(
         if (ingredients.isEmpty()) {
             val fallback = StubCatalog.byId("mixed_dish")
             ingredients += fallback.toIngredient(roundTo5(fallback.defaultGrams * sizeFactor), Confidence.LOW)
-            notes += "Das Gericht wurde nicht sicher erkannt. Bitte Zutaten prüfen oder ergänzen."
+            notes += "Das Gericht ist nicht sicher erkannt. Bitte die Zutaten prüfen oder ergänzen."
         }
 
         val needsOil = needsImplicitOil(tokens, matched.keys)
@@ -71,10 +71,10 @@ class StubFoodAnalyzer(
         }
 
         if (usedCorrections.isNotEmpty()) {
-            notes += "Deine üblichen Portionen wurden berücksichtigt: ${usedCorrections.joinToString()}."
+            notes += "Deine üblichen Portionen sind eingerechnet: ${usedCorrections.joinToString()}."
         }
         if (input.photoPaths.size >= 2) {
-            notes += "${input.photoPaths.size} Fotos wurden gemeinsam ausgewertet."
+            notes += "Alle ${input.photoPaths.size} Fotos wurden zusammen ausgewertet."
         }
 
         val questions = buildQuestions(tokens, matched.keys, needsOil && !oilMentioned).take(MAX_QUESTIONS)

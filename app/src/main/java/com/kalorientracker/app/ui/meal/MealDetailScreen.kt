@@ -98,7 +98,7 @@ fun MealDetailScreen(
             },
         )
         if (state.notFound) {
-            EmptyHint("Diese Mahlzeit existiert nicht mehr.")
+            EmptyHint("Diese Mahlzeit gibt es nicht mehr. Geh mit dem Pfeil oben zurück.")
             return@Column
         }
         if (meal == null) return@Column

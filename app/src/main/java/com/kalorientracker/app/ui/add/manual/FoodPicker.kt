@@ -115,7 +115,7 @@ private fun SearchStep(viewModel: FoodSearchViewModel, onCreateCustom: (() -> Un
             } else {
                 items(results, key = { "r-${it.id}" }) { FoodRow(it) { viewModel.select(it) } }
                 if (results.isEmpty()) {
-                    item { EmptyHint("Nichts in der lokalen Datenbank gefunden.") }
+                    item { EmptyHint("Auf deinem Gerät nicht gefunden.") }
                 }
                 item {
                     Column(Modifier.padding(top = 8.dp)) {
@@ -128,7 +128,7 @@ private fun SearchStep(viewModel: FoodSearchViewModel, onCreateCustom: (() -> Un
                             OnlineResults.Loading -> Text("Suche online …", style = MaterialTheme.typography.bodySmall, color = Palette.TextTertiary, modifier = Modifier.padding(12.dp))
                             is OnlineResults.Unavailable -> Text(o.reason, style = MaterialTheme.typography.bodySmall, color = Palette.TextTertiary, modifier = Modifier.padding(12.dp))
                             is OnlineResults.Loaded -> {
-                                SectionLabel("Online gefunden · wird lokal gespeichert", Modifier.padding(vertical = 10.dp))
+                                SectionLabel("Online gefunden, wird auf deinem Gerät gespeichert", Modifier.padding(vertical = 10.dp))
                                 o.foods.forEach { food -> FoodRow(food) { viewModel.select(food) } }
                             }
                         }

@@ -97,7 +97,7 @@ fun IngredientReviewScreen(
             }
             item { SectionLabel(if (state.photos.isNotEmpty()) "Erkannt" else "Zutaten", Modifier.padding(top = 4.dp)) }
             if (state.ingredients.isEmpty()) {
-                item { EmptyHint("Noch keine Zutaten. Füge eine Zutat hinzu.") }
+                item { EmptyHint("Noch keine Zutaten. Tippe unten auf „Zutat hinzufügen“.") }
             }
             itemsIndexed(state.ingredients, key = { _, it -> it.key }) { index, ingredient ->
                 StaggeredAppear(index) {

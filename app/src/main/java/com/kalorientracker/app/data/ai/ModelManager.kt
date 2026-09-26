@@ -122,7 +122,7 @@ class ModelManager @Inject constructor(
             return
         }
         if (freeStorageBytes + partState.downloadedBytes() < EXPECTED_BYTES + SPACE_MARGIN_BYTES) {
-            _state.value = ModelState.Failed("Zu wenig Speicherplatz. Benötigt werden etwa 2,8 GB freier Speicher.")
+            _state.value = ModelState.Failed("Zu wenig Speicherplatz. Die App braucht etwa 2,6 GB frei.")
             return
         }
         _state.value = ModelState.Downloading(partState.downloadedBytes(), EXPECTED_BYTES, waitingForWifi = false)
@@ -141,7 +141,7 @@ class ModelManager @Inject constructor(
     /** Runs the transfer itself. Called by the service, which owns its lifetime. */
     suspend fun runDownload() {
         val target = modelFile ?: run {
-            _state.value = ModelState.Failed("Kein Speicher für das Modell verfügbar.")
+            _state.value = ModelState.Failed("Kein Platz für das Modell. Bitte Speicher freigeben und es erneut versuchen.")
             return
         }
         try {

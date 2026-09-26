@@ -255,7 +255,7 @@ private fun BodyStep(state: OnboardingState, vm: OnboardingViewModel) {
             color = Palette.TextSecondary,
         )
         Text(
-            "Einordnung nach WHO. Für den Kalorienbedarf zählt die Größe nicht mit – die Formel der DGE nutzt Gewicht und Alter.",
+            "Einordnung nach WHO. Für den Kalorienbedarf zählt die Größe nicht mit. Die Formel der DGE nutzt Gewicht und Alter.",
             style = MaterialTheme.typography.bodySmall,
             color = Palette.TextTertiary,
         )
@@ -430,7 +430,7 @@ private fun MacroLine(metric: Metric, grams: Int) {
 
 @Composable
 private fun ConfirmStep(state: OnboardingState, vm: OnboardingViewModel) {
-    StepTitle("Schritt 5 · Plan", "Passt das so?", "Du kannst den Vorschlag übernehmen oder anpassen. Die Makros werden automatisch neu verteilt.")
+    StepTitle("Schritt 5 · Plan", "Passt das so?", "Du kannst den Vorschlag so lassen oder ändern. Die Makros verteilt die App dann neu.")
     NumberField(state.targetKcal, vm::setTargetKcal, "Kalorienziel", Modifier.fillMaxWidth(), suffix = "kcal", decimal = false)
     Spacer(Modifier.height(12.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -455,7 +455,7 @@ private fun ConfirmStep(state: OnboardingState, vm: OnboardingViewModel) {
         if (kotlin.math.abs(macroKcal - chosen) > 50) {
             Spacer(Modifier.height(8.dp))
             Text(
-                "Die Makros ergeben ${Fmt.int(macroKcal)} kcal – das weicht vom Kalorienziel ab.",
+                "Die Makros ergeben ${Fmt.int(macroKcal)} kcal. Das weicht vom Kalorienziel ab.",
                 style = MaterialTheme.typography.bodySmall,
                 color = Palette.TextTertiary,
             )
@@ -463,7 +463,7 @@ private fun ConfirmStep(state: OnboardingState, vm: OnboardingViewModel) {
     }
     Spacer(Modifier.height(20.dp))
     Text(
-        "Die App beobachtet später dein Gewicht und schlägt Anpassungen vor – geändert wird nie ohne deine Bestätigung.",
+        "Die App schaut später auf dein Gewicht und schlägt Anpassungen vor. Geändert wird nichts ohne deine Bestätigung.",
         style = MaterialTheme.typography.bodySmall,
         color = Palette.TextTertiary,
     )

@@ -101,7 +101,7 @@ fun WorkoutScreen(onBack: () -> Unit, viewModel: WorkoutViewModel = hiltViewMode
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             if (state.goal != null && state.goal != Goal.MUSCLE_BUILD) {
                 Text(
-                    "Der Plan ist für das Ziel Muskelaufbau gedacht, kann aber jederzeit genutzt werden.",
+                    "Der Plan ist für Muskelaufbau gedacht. Du kannst ihn aber mit jedem Ziel nutzen.",
                     style = MaterialTheme.typography.bodySmall,
                     color = Palette.TextTertiary,
                 )

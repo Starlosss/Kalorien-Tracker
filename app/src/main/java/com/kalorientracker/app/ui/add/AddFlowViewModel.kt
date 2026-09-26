@@ -169,7 +169,7 @@ class AddFlowViewModel @Inject constructor(
                     importing = false,
                     message = when {
                         imported == 0 -> "Das Bild konnte nicht geladen werden. Bitte ein anderes auswählen."
-                        failed > 0 -> "$failed Bild(er) konnten nicht geladen werden."
+                        failed > 0 -> if (failed == 1) "Ein Bild konnte nicht geladen werden." else "$failed Bilder konnten nicht geladen werden."
                         else -> null
                     },
                 )
@@ -356,9 +356,9 @@ class AddFlowViewModel @Inject constructor(
                     val last = result.food.id.takeIf { it > 0 }?.let { foods.lastGrams(it) }
                     BarcodeState.Found(result.food, result.fromOnline, last ?: result.food.servingGrams ?: 100.0)
                 }
-                ProductLookup.NotFound -> BarcodeState.NotFound(code, "Produkt nicht gefunden – weder lokal noch online.")
-                ProductLookup.OnlineDisabled -> BarcodeState.NotFound(code, "Nicht in der lokalen Datenbank. Die Online-Recherche ist in den Einstellungen deaktiviert.")
-                ProductLookup.Offline -> BarcodeState.NotFound(code, "Nicht in der lokalen Datenbank und keine Internetverbindung.")
+                ProductLookup.NotFound -> BarcodeState.NotFound(code, "Weder auf deinem Gerät noch online gefunden.")
+                ProductLookup.OnlineDisabled -> BarcodeState.NotFound(code, "Nicht auf deinem Gerät gefunden. Die Online-Suche ist in den Einstellungen ausgeschaltet.")
+                ProductLookup.Offline -> BarcodeState.NotFound(code, "Nicht auf deinem Gerät gefunden, und es gibt gerade keine Internetverbindung.")
             }
             _state.update { it.copy(barcode = next) }
         }

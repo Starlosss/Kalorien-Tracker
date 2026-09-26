@@ -79,7 +79,7 @@ fun BarcodeScreen(
             )
             is BarcodeState.Found -> Column(Modifier.padding(horizontal = 20.dp).verticalScroll(rememberScrollState())) {
                 Text(
-                    if (barcode.fromOnline) "Produkt online gefunden und lokal gespeichert" else "Produkt gefunden",
+                    if (barcode.fromOnline) "Online gefunden und auf deinem Gerät gespeichert" else "Produkt gefunden",
                     style = MaterialTheme.typography.labelMedium,
                     color = Palette.TextSecondary,
                 )
@@ -155,7 +155,7 @@ private fun ScannerView(loading: Boolean, onCode: (String) -> Unit) {
                 CameraPreview(useCases, Modifier.fillMaxSize())
                 CaptureFrame(aspect = 1.6f)
             } else {
-                PermissionMissing("Zum Scannen wird die Kamera benötigt.", permission.request)
+                PermissionMissing("Zum Scannen braucht die App die Kamera.", permission.request)
             }
             Text(
                 if (loading) "Suche Produkt …" else "Barcode in den Rahmen halten",

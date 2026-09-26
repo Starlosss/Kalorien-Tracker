@@ -100,7 +100,7 @@ fun CameraScreen(
             CameraPreview(useCases, Modifier.fillMaxSize())
             CaptureFrame()
         } else {
-            PermissionMissing("Für Fotos deiner Mahlzeit wird die Kamera benötigt. Die Bilder bleiben auf deinem Gerät.", permission.request)
+            PermissionMissing("Für Fotos deiner Mahlzeit braucht die App die Kamera. Die Bilder bleiben auf deinem Gerät.", permission.request)
         }
 
         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
@@ -121,8 +121,8 @@ fun CameraScreen(
                 error != null -> error!!
                 latestIssue != null -> latestIssue.message
                 state.photos.isEmpty() -> "Essen innerhalb des Rahmens platzieren"
-                state.photos.size == 1 -> "Eine zusätzliche Aufnahme von oben könnte die Schätzung verbessern."
-                else -> "Weitere Perspektiven oder die Verpackung helfen bei der Erkennung."
+                state.photos.size == 1 -> "Ein zweites Foto von oben macht die Schätzung genauer."
+                else -> "Weitere Fotos aus anderen Winkeln oder von der Verpackung helfen bei der Erkennung."
             }
             Text(
                 hint,

@@ -100,7 +100,7 @@ fun CustomFoodScreen(
             SectionLabel("Gegessene Menge")
             NumberField(amount, { amount = it }, "Menge", Modifier.fillMaxWidth(), suffix = "g")
             Text(
-                "Das Lebensmittel wird lokal gespeichert und steht danach offline zur Verfügung.",
+                "Das Lebensmittel wird auf deinem Gerät gespeichert. Du findest es danach auch ohne Internet in der Suche.",
                 style = MaterialTheme.typography.bodySmall,
                 color = Palette.TextTertiary,
             )

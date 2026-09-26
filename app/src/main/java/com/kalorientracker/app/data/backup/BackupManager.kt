@@ -132,7 +132,7 @@ class BackupManager @Inject constructor(
             }
         }
         val data = json.decodeFromString(BackupData.serializer(), text ?: error("Keine Daten in der Datei gefunden"))
-        require(data.format <= BackupData.FORMAT_VERSION) { "Diese Sicherung stammt aus einer neueren App-Version." }
+        require(data.format <= BackupData.FORMAT_VERSION) { "Diese Sicherung stammt aus einer neueren App-Version. Bitte zuerst die App aktualisieren." }
 
         val stagedPhotos = staging.listFiles().orEmpty()
         if (stagedPhotos.isNotEmpty()) {

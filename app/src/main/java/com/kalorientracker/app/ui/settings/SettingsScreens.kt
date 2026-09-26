@@ -93,7 +93,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenSection: (SettingsSection) -> Unit)
         }
         Spacer(Modifier.height(28.dp))
         Text(
-            "Kein Account · Keine Werbung · Keine Cloud-Pflicht\nAlle deine Daten und Fotos bleiben auf deinem Gerät.",
+            "Alle deine Daten und Fotos bleiben auf deinem Gerät.\nEs gibt keinen Account und keine Anmeldung.",
             style = MaterialTheme.typography.bodySmall,
             color = Palette.TextTertiary,
         )
@@ -243,7 +243,7 @@ private fun ProfileSection(profile: UserProfile?, onSave: (UserProfile) -> Unit)
         haptic = HapticEvent.Confirm,
     )
     if (parsed == null) {
-        Text("Bitte die Eingaben prüfen.", style = MaterialTheme.typography.bodySmall, color = Palette.TextTertiary, modifier = Modifier.padding(top = 8.dp))
+        Text("Eine Eingabe passt noch nicht. Bitte die Felder oben prüfen.", style = MaterialTheme.typography.bodySmall, color = Palette.TextTertiary, modifier = Modifier.padding(top = 8.dp))
     }
 }
 
@@ -304,7 +304,7 @@ private fun PlanSection(state: SettingsUiState, vm: SettingsViewModel) {
     SecondaryButton("Automatische Anpassung prüfen", vm::checkAdaptive, Modifier.fillMaxWidth())
     Spacer(Modifier.height(10.dp))
     Text(
-        "Die Anpassung vergleicht deine Gewichtsentwicklung mit den getrackten Kalorien. Änderungen werden immer erst nach deiner Bestätigung übernommen.",
+        "Die Anpassung vergleicht dein Gewicht mit den Kalorien, die du eingetragen hast. Geändert wird nichts ohne deine Bestätigung.",
         style = MaterialTheme.typography.bodySmall,
         color = Palette.TextTertiary,
     )
@@ -333,7 +333,7 @@ private fun TrainingSection(state: SettingsUiState, onOpenWorkout: () -> Unit) {
     PrimaryButton(if (plan == null) "Plan erstellen" else "Plan ansehen und anpassen", onOpenWorkout, Modifier.fillMaxWidth())
     Spacer(Modifier.height(10.dp))
     Text(
-        "Der Trainingsaufwand fließt in die Bedarfsberechnung ein, wenn du den Plan unter „Ernährungsplan“ neu berechnen lässt.",
+        "Dein Training zählt beim Kalorienbedarf mit, sobald du den Plan unter „Ernährungsplan“ neu berechnen lässt.",
         style = MaterialTheme.typography.bodySmall,
         color = Palette.TextTertiary,
     )
@@ -353,19 +353,19 @@ private fun DataSection(learningCount: Int, vm: SettingsViewModel) {
         if (uri != null) vm.import(uri)
     }
 
-    SettingBlock("Backup", "Vollständige Sicherung inklusive Fotos als ZIP-Datei. Du kannst sie selbst auf PC, USB-Stick oder ein anderes Medium verschieben. Die Datei ist nicht verschlüsselt.") {
+    SettingBlock("Backup", "Sichert alle Daten samt Fotos in einer ZIP-Datei. Du kannst sie danach auf den PC oder einen USB-Stick kopieren. Die Datei ist nicht verschlüsselt.") {
         PrimaryButton("Backup erstellen", { exportZip.launch("kalorien-backup-$stamp.zip") }, Modifier.fillMaxWidth())
     }
-    SettingBlock("Export", "Alle Daten ohne Fotos als JSON: Mahlzeiten, Nährwerte, Gewicht, Ziele, Einstellungen, Produkte, Training und Lerninformationen.") {
+    SettingBlock("Export", "Schreibt alle Daten ohne Fotos in eine JSON-Datei: Mahlzeiten, Nährwerte, Gewicht, Ziele, Einstellungen, Produkte, Training und Gelerntes.") {
         SecondaryButton("Daten exportieren", { exportJson.launch("kalorien-export-$stamp.json") }, Modifier.fillMaxWidth())
     }
-    SettingBlock("Import", "Stellt einen früheren Zustand aus einem Backup oder Export wieder her. Aktuelle Daten werden dabei ersetzt.") {
+    SettingBlock("Import", "Holt einen früheren Stand aus einem Backup oder Export zurück. Deine jetzigen Daten werden dabei ersetzt.") {
         SecondaryButton("Backup oder Export importieren", { importFile.launch(arrayOf("application/zip", "application/json", "application/octet-stream", "*/*")) }, Modifier.fillMaxWidth())
     }
-    SettingBlock("Lernsystem", "$learningCount gespeicherte Portionskorrekturen verbessern künftige Schätzungen. Die Lebensmitteldatenbank selbst wird dadurch nie verändert.") {
+    SettingBlock("Lernsystem", "Die App hat $learningCount Portionskorrekturen gespeichert und rechnet sie in neue Schätzungen ein. Die Lebensmitteldatenbank bleibt unverändert.") {
         SecondaryButton("Gelerntes zurücksetzen", vm::resetLearning, Modifier.fillMaxWidth(), enabled = learningCount > 0)
     }
-    SettingBlock("Daten löschen", "Entfernt alle Mahlzeiten, Fotos, Gewichtseinträge, Ziele und Einstellungen von diesem Gerät.") {
+    SettingBlock("Daten löschen", "Löscht alle Mahlzeiten, Fotos, Gewichtseinträge, Ziele und Einstellungen von diesem Gerät.") {
         SecondaryButton("Alle Daten löschen", { confirmDelete = true }, Modifier.fillMaxWidth())
     }
 
@@ -374,7 +374,7 @@ private fun DataSection(learningCount: Int, vm: SettingsViewModel) {
             onDismissRequest = { confirmDelete = false },
             containerColor = Palette.SurfaceRaised,
             title = { Text("Wirklich alles löschen?", color = Palette.TextPrimary) },
-            text = { Text("Das kann nicht rückgängig gemacht werden. Erstelle vorher ein Backup, wenn du die Daten behalten möchtest.", color = Palette.TextSecondary) },
+            text = { Text("Das lässt sich nicht rückgängig machen. Erstelle vorher ein Backup, wenn du die Daten behalten möchtest.", color = Palette.TextSecondary) },
             confirmButton = {
                 TextButton(onClick = { confirmDelete = false; vm.deleteAll() }) { Text("Alles löschen", color = Palette.Signal) }
             },
@@ -394,7 +394,7 @@ private fun PrivacySection(onlineEnabled: Boolean, vm: SettingsViewModel) {
             Text("Alle deine Daten und Fotos bleiben auf deinem Gerät.", style = MaterialTheme.typography.titleMedium, color = Palette.TextPrimary)
             Spacer(Modifier.height(8.dp))
             Text(
-                "Es gibt keinen Account, keine Anmeldung und keine Synchronisation. Die Foto-Erkennung (Gemma) läuft vollständig auf dem Gerät; das Modell wird dafür nur einmalig von Hugging Face geladen. Fotos werden nie an einen Server geschickt.",
+                "Es gibt keinen Account und keine Anmeldung. Die Foto-Erkennung mit Gemma läuft ganz auf dem Gerät. Nur das Modell wird einmal von Hugging Face geladen. Deine Fotos gehen nie an einen Server.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Palette.TextSecondary,
             )
@@ -402,13 +402,13 @@ private fun PrivacySection(onlineEnabled: Boolean, vm: SettingsViewModel) {
     }
     Spacer(Modifier.height(16.dp))
     ToggleRow(
-        title = "Online-Recherche für unbekannte Produkte",
-        subtitle = "Nur wenn ein Barcode oder Suchbegriff lokal nicht gefunden wird. Gesendet wird nur der Barcode bzw. Suchbegriff an Open Food Facts; das Ergebnis wird lokal gespeichert.",
+        title = "Online-Suche für unbekannte Produkte",
+        subtitle = "Läuft nur, wenn ein Barcode oder Suchbegriff auf deinem Gerät nicht gefunden wird. An Open Food Facts geht dann nur dieser Barcode oder Suchbegriff. Das Ergebnis wird auf deinem Gerät gespeichert.",
         checked = onlineEnabled,
         onCheckedChange = vm::setOnlineLookup,
     )
     Spacer(Modifier.height(16.dp))
-    SettingBlock("Fotos", "${stats.first} Fotos · ${Fmt.one(stats.second / 1_048_576.0)} MB auf diesem Gerät. Einzelne Fotos kannst du in der jeweiligen Mahlzeit löschen.") {
+    SettingBlock("Fotos", "${stats.first} Fotos · ${Fmt.one(stats.second / 1_048_576.0)} MB auf diesem Gerät. Ein einzelnes Foto löschst du in der Mahlzeit, zu der es gehört.") {
         SecondaryButton("Alle Fotos löschen", { confirm = true }, Modifier.fillMaxWidth(), enabled = stats.first > 0)
     }
     if (confirm) {
@@ -440,11 +440,11 @@ private fun AiSection(aiEnabled: Boolean, vm: SettingsViewModel) {
     PlainCard(Modifier.fillMaxWidth()) {
         Column {
             Text(ModelManager.MODEL_NAME, style = MaterialTheme.typography.titleLarge, color = Palette.TextPrimary)
-            Text("Google · Apache 2.0 · läuft komplett auf deinem Gerät", style = MaterialTheme.typography.bodySmall, color = Palette.TextTertiary)
+            Text("Von Google, Lizenz Apache 2.0. Läuft komplett auf deinem Gerät.", style = MaterialTheme.typography.bodySmall, color = Palette.TextTertiary)
             Spacer(Modifier.height(10.dp))
             Text(
-                "Erkennt Gerichte und Zutaten auf deinen Fotos, schätzt Mengen und stellt Rückfragen. " +
-                    "Das Modell (2,6 GB) wird einmalig geladen, danach funktioniert alles offline. Eine Analyse dauert je nach Gerät etwa 10–30 Sekunden.",
+                "Erkennt Gerichte und Zutaten auf deinen Fotos, schätzt die Mengen und fragt nach, wenn etwas unklar ist. " +
+                    "Das Modell (2,4 GB) wird einmal geladen, danach läuft alles offline. Eine Analyse dauert je nach Gerät 10–30 Sekunden.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Palette.TextSecondary,
             )
@@ -453,7 +453,7 @@ private fun AiSection(aiEnabled: Boolean, vm: SettingsViewModel) {
     Spacer(Modifier.height(16.dp))
     if (ram < ModelManager.RECOMMENDED_RAM_GB) {
         Text(
-            "Dein Gerät hat ${Fmt.one(ram)} GB Arbeitsspeicher. Empfohlen sind mindestens 6 GB – die Analyse kann langsam sein oder abbrechen.",
+            "Dein Gerät hat ${Fmt.one(ram)} GB Arbeitsspeicher. Empfohlen sind mindestens 6 GB. Die Analyse kann langsam sein oder abbrechen.",
             style = MaterialTheme.typography.bodySmall,
             color = Palette.TextPrimary,
         )
@@ -465,9 +465,9 @@ private fun AiSection(aiEnabled: Boolean, vm: SettingsViewModel) {
                 Text(s.reason, style = MaterialTheme.typography.bodyMedium, color = Palette.TextPrimary)
                 Spacer(Modifier.height(10.dp))
             }
-            ToggleRow("Nur über WLAN laden", wifiOnly, vm::setWifiOnly, "Empfohlen – der Download ist 2,6 GB groß")
+            ToggleRow("Nur über WLAN laden", wifiOnly, vm::setWifiOnly, "Empfohlen, der Download ist 2,4 GB groß")
             Spacer(Modifier.height(8.dp))
-            PrimaryButton("Modell herunterladen (2,6 GB)", startDownload, Modifier.fillMaxWidth(), haptic = HapticEvent.Confirm)
+            PrimaryButton("Modell herunterladen (2,4 GB)", startDownload, Modifier.fillMaxWidth(), haptic = HapticEvent.Confirm)
             Spacer(Modifier.height(8.dp))
             Text(
                 "Frei: ${Fmt.one(vm.freeStorageBytes / 1_073_741_824.0)} GB",
@@ -499,7 +499,7 @@ private fun AiSection(aiEnabled: Boolean, vm: SettingsViewModel) {
                 Text(pace, style = MaterialTheme.typography.bodySmall, color = Palette.TextTertiary)
             }
             Text(
-                "Läuft im Hintergrund weiter, auch wenn du die App verlässt. Unterbrochen? Es geht dort weiter, wo es aufgehört hat.",
+                "Der Download läuft weiter, auch wenn du die App verlässt. Nach einer Unterbrechung geht es an der gleichen Stelle weiter.",
                 style = MaterialTheme.typography.bodySmall,
                 color = Palette.TextTertiary,
             )
@@ -507,11 +507,11 @@ private fun AiSection(aiEnabled: Boolean, vm: SettingsViewModel) {
             SecondaryButton("Abbrechen", vm::cancelModelDownload, Modifier.fillMaxWidth())
         }
         ModelState.Ready -> {
-            Text("Bereit – Fotos werden jetzt auf dem Gerät analysiert.", style = MaterialTheme.typography.titleMedium, color = Palette.TextPrimary)
+            Text("Bereit. Fotos werden jetzt auf dem Gerät analysiert.", style = MaterialTheme.typography.titleMedium, color = Palette.TextPrimary)
             Spacer(Modifier.height(8.dp))
-            ToggleRow("Foto-KI verwenden", aiEnabled, vm::setAiEnabled, "Aus: Schätzung nur aus der Beschreibung")
+            ToggleRow("Foto-Erkennung verwenden", aiEnabled, vm::setAiEnabled, "Aus: Die Schätzung kommt nur aus deiner Beschreibung")
             Spacer(Modifier.height(12.dp))
-            SecondaryButton("Modell löschen (2,6 GB freigeben)", { confirmDelete = true }, Modifier.fillMaxWidth())
+            SecondaryButton("Modell löschen (2,4 GB freigeben)", { confirmDelete = true }, Modifier.fillMaxWidth())
         }
     }
 
@@ -520,7 +520,7 @@ private fun AiSection(aiEnabled: Boolean, vm: SettingsViewModel) {
             onDismissRequest = { confirmDelete = false },
             containerColor = Palette.SurfaceRaised,
             title = { Text("Modell löschen?", color = Palette.TextPrimary) },
-            text = { Text("Die Foto-Erkennung ist danach erst nach einem erneuten Download wieder verfügbar.", color = Palette.TextSecondary) },
+            text = { Text("Danach musst du das Modell erst wieder herunterladen, bevor die Foto-Erkennung läuft.", color = Palette.TextSecondary) },
             confirmButton = { TextButton(onClick = { confirmDelete = false; vm.deleteModel() }) { Text("Löschen", color = Palette.Signal) } },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Abbrechen", color = Palette.TextSecondary) } },
         )
@@ -530,8 +530,8 @@ private fun AiSection(aiEnabled: Boolean, vm: SettingsViewModel) {
 @Composable
 private fun AppearanceSection(state: SettingsUiState, vm: SettingsViewModel) {
     val s = state.settings
-    ToggleRow("Animationen", s.animationsEnabled, vm::setAnimations, "Weiche Übergänge, zählende Zahlen, animierte Diagramme")
-    ToggleRow("Haptisches Feedback", s.hapticsEnabled, vm::setHaptics, "Dezente Rückmeldung bei Slidern, Buttons und beim Speichern")
+    ToggleRow("Animationen", s.animationsEnabled, vm::setAnimations, "Weiche Übergänge, hochzählende Zahlen und animierte Diagramme")
+    ToggleRow("Vibration", s.hapticsEnabled, vm::setHaptics, "Kurzes Vibrieren bei Reglern, Knöpfen und beim Speichern")
     ToggleRow("Linien glätten", s.smoothCharts, vm::setSmoothCharts, "Liniendiagramme als weiche Kurven")
     ToggleRow("Zielgewicht im Diagramm", s.showTargetWeightLine, vm::setTargetWeightLine, "Blendet das Zielgewicht als Linie ein")
 }

@@ -109,7 +109,7 @@ fun AnalyzingScreen(
         if (aiState is ModelState.Ready && state.photos.isNotEmpty()) {
             Spacer(Modifier.height(20.dp))
             Text(
-                "Die KI arbeitet auf deinem Gerät – das kann bis zu einer halben Minute dauern. Deine Fotos verlassen das Handy nicht.",
+                "Die Erkennung läuft auf deinem Gerät und dauert bis zu einer halben Minute. Deine Fotos verlassen das Handy nicht.",
                 style = MaterialTheme.typography.bodySmall,
                 color = Palette.TextTertiary,
             )
@@ -171,7 +171,7 @@ fun FollowUpScreen(
     Column(Modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = 20.dp)) {
         ScreenHeader(title = "Kurze Rückfrage", onBack = onBack)
         Text(
-            if (state.questions.size == 1) "Eine Angabe verbessert die Schätzung deutlich." else "${state.questions.size} Angaben verbessern die Schätzung deutlich.",
+            if (state.questions.size == 1) "Eine Angabe macht die Schätzung genauer." else "${state.questions.size} Angaben machen die Schätzung genauer.",
             style = MaterialTheme.typography.bodyMedium,
             color = Palette.TextSecondary,
         )
