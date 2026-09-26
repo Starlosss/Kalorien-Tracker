@@ -17,8 +17,10 @@ import javax.inject.Singleton
 /**
  * Imports the bundled German barcode table (`products.csv`, ~40.000 rows) into Room once, in the
  * background, so a barcode scan finds a match fully offline. Follows the same "seed once, flagged
- * in SharedPreferences" pattern as [FoodSeeder]; a chunked insert keeps memory bounded and lets an
- * interrupted import simply resume from scratch next launch, since the flag is only set at the end.
+ * in SharedPreferences" pattern as [FoodSeeder]; a chunked insert keeps memory bounded. Because the
+ * flag is only written after the last chunk, an import interrupted midway is not resumed from a
+ * byte offset: the next launch restarts and re-parses the whole file from row one. That is a full
+ * restart, not a partial skip, and it stays cheap here (about 2 seconds for ~40.000 rows).
  */
 @Singleton
 class ProductCatalogImporter @Inject constructor(
@@ -91,11 +93,16 @@ class ProductCatalogImporter @Inject constructor(
         /**
          * Parses one `products.csv` line. Pure and Android-free so it is unit-testable on its
          * own. Returns null for anything broken or implausible: wrong field count, a barcode that
-         * is not 8 to 14 digits or fails the GTIN check digit, an empty name, or kcal outside a
-         * plausible 1..900 per-100g range. Missing nutrient fields are treated as 0, not rejected.
+         * is not 8 to 14 digits or fails the GTIN check digit, an empty name, kcal outside a
+         * plausible 1..900 per-100g range, or an odd number of quote characters (an unterminated
+         * quoted field, e.g. one whose embedded newline split it across two lines when the asset
+         * is read line by line; letting that through could silently truncate a later field instead
+         * of failing the row). Missing *secondary* nutrient fields (fibre, sugar, saturated fat,
+         * salt) are treated as 0, not rejected; see the comment at their use below.
          */
         fun parseLine(line: String): Food? {
             if (line.isBlank()) return null
+            if (line.count { it == '"' } % 2 != 0) return null
             val fields = splitCsvLine(line)
             if (fields.size != FIELD_COUNT) return null
 
@@ -113,6 +120,15 @@ class ProductCatalogImporter @Inject constructor(
                 name = name,
                 brand = fields[2].trim().takeIf { it.isNotEmpty() },
                 barcode = barcode,
+                // kcal/protein/carbs/fat are guaranteed present by Task 1's data generation, so a
+                // missing value there fails the row above. Fibre, sugar, saturated fat and salt are
+                // not guaranteed: for many packaged products only the headline nutrients are known,
+                // and an empty field here is coerced to 0.0, indistinguishable from a genuinely
+                // measured zero (about 32% of rows have no fibre value, for example). We accept
+                // that known simplification instead of making Nutrients' fields nullable, because
+                // that type is shared by meal totals, the daily view, statistics, export and
+                // backup; changing it here would touch all of those and need a Room migration for
+                // one import source. The gap is disclosed to the user in SourceNote instead.
                 per100g = Nutrients(
                     kcal = kcal,
                     protein = fields[4].toDoubleOrNull() ?: 0.0,

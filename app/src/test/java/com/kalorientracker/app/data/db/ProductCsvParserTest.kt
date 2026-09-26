@@ -28,4 +28,16 @@ class ProductCsvParserTest {
         assertNull(ProductCatalogImporter.parseLine("4001686301203,Name,,0,0,0,0,0,0,0,0,100"))
         assertNull(ProductCatalogImporter.parseLine("4001686301203,Name,,5000,1,1,1,0,0,0,0,100"))
     }
+
+    @Test
+    fun rejectsLineWithUnterminatedQuote() {
+        // An embedded newline inside a quoted field, read line by line, splits one CSV row into
+        // two lines: the first keeps the opening quote but never sees a closing one. Without this
+        // check the last field here would silently parse as "100" instead of failing the row.
+        assertNull(
+            ProductCatalogImporter.parseLine(
+                "4001686301203,Goldbären,Haribo,343,6.9,77,0.5,0,46,0.1,0.07,\"100",
+            ),
+        )
+    }
 }
