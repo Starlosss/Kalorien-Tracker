@@ -1,5 +1,7 @@
 package com.kalorientracker.app.ui.settings
 
+import android.Manifest
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -39,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.kalorientracker.app.data.ai.Formats
 import com.kalorientracker.app.data.ai.ModelManager
 import com.kalorientracker.app.data.ai.ModelState
 import com.kalorientracker.app.domain.model.Goal
@@ -422,6 +425,12 @@ private fun AiSection(aiEnabled: Boolean, vm: SettingsViewModel) {
     val state by vm.modelState.collectAsStateWithLifecycle()
     val wifiOnly by vm.wifiOnly.collectAsStateWithLifecycle()
     var confirmDelete by remember { mutableStateOf(false) }
+    // Progress is shown in a notification; without the permission the download would run unseen.
+    val notifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { vm.downloadModel() }
+    val startDownload = {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) notifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+        else vm.downloadModel()
+    }
     LaunchedEffect(Unit) { vm.refreshModel() }
     val ram = vm.deviceRamGb
 
@@ -455,7 +464,7 @@ private fun AiSection(aiEnabled: Boolean, vm: SettingsViewModel) {
             }
             ToggleRow("Nur über WLAN laden", wifiOnly, vm::setWifiOnly, "Empfohlen – der Download ist 2,6 GB groß")
             Spacer(Modifier.height(8.dp))
-            PrimaryButton("Modell herunterladen (2,6 GB)", vm::downloadModel, Modifier.fillMaxWidth(), haptic = HapticEvent.Confirm)
+            PrimaryButton("Modell herunterladen (2,6 GB)", startDownload, Modifier.fillMaxWidth(), haptic = HapticEvent.Confirm)
             Spacer(Modifier.height(8.dp))
             Text(
                 "Frei: ${Fmt.one(vm.freeStorageBytes / 1_073_741_824.0)} GB",
@@ -479,8 +488,15 @@ private fun AiSection(aiEnabled: Boolean, vm: SettingsViewModel) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = Palette.TextSecondary,
             )
+            val pace = listOfNotNull(
+                Formats.speed(s.bytesPerSecond).takeIf { s.bytesPerSecond > 0 },
+                s.remainingText,
+            ).joinToString(" · ")
+            if (pace.isNotEmpty()) {
+                Text(pace, style = MaterialTheme.typography.bodySmall, color = Palette.TextTertiary)
+            }
             Text(
-                "Der Download läuft im Hintergrund weiter, auch wenn du die App verlässt.",
+                "Läuft im Hintergrund weiter, auch wenn du die App verlässt. Unterbrochen? Es geht dort weiter, wo es aufgehört hat.",
                 style = MaterialTheme.typography.bodySmall,
                 color = Palette.TextTertiary,
             )

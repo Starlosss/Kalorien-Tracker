@@ -76,7 +76,8 @@ class GemmaPromptTest {
         val result = GemmaPrompt.parse("Hier ist die Analyse:\n$multiline\nGuten Appetit", "", 1, emptyList())
         assertNotNull(result)
         assertEquals("Reis (gekocht)", result!!.ingredients.single().name)
-        assertTrue(result.followUpQuestions.isEmpty())
+        // A photo without a description is never just accepted silently.
+        assertEquals("Wie viel Reis war dabei?", result.followUpQuestions.single().text)
     }
 
     @Test
@@ -133,6 +134,61 @@ class GemmaPromptTest {
         assertTrue(followUp.contains("Welche Art von Käse"))
         assertTrue(followUp.contains("→ Cheddar"))
         assertTrue(followUp.contains("Tortilla Chips (gebacken) 200 g"))
+    }
+
+    @Test
+    fun addsBackFoodTheModelOverlookedAndAsksForItsPortion() {
+        val raw = """{"gericht":"Reis mit Hähnchen","zutaten":[
+            {"name":"Reis (gekocht)","gramm":200,"sicherheit":"hoch","kcal":130,"protein":2.7,"kohlenhydrate":28,"fett":0.3},
+            {"name":"Hähnchenbrust (gebraten)","gramm":150,"sicherheit":"hoch","kcal":165,"protein":31,"kohlenhydrate":0,"fett":3.6}
+        ],"rueckfragen":[]}"""
+        val result = GemmaPrompt.parse(raw, "Reis mit Hähnchen und Brokkoli", 1, emptyList())!!
+
+        assertEquals(listOf("Reis (gekocht)", "Hähnchenbrust (gebraten)", "Brokkoli (gegart)"), result.ingredients.map { it.name })
+        val broccoli = result.ingredients.last()
+        assertEquals(Confidence.LOW, broccoli.confidence)
+        assertTrue(result.notes.any { it.contains("Brokkoli") })
+
+        val question = result.followUpQuestions.single()
+        assertEquals("Wie viel Brokkoli war dabei?", question.text)
+        assertEquals(DescriptionAnchors.QUESTION_PREFIX + broccoli.foodKey, question.id)
+    }
+
+    @Test
+    fun statedGramsNeedNoQuestion() {
+        val raw = """{"gericht":"Reis","zutaten":[{"name":"Reis (gekocht)","gramm":200,"sicherheit":"hoch","kcal":130,"protein":2.7,"kohlenhydrate":28,"fett":0.3}],"rueckfragen":[]}"""
+        val result = GemmaPrompt.parse(raw, "Reis mit 30g Butter", 1, emptyList())!!
+        val butter = result.ingredients.first { it.name == "Butter" }
+        assertEquals(30.0, butter.estimatedGrams, 0.0)
+        assertEquals(Confidence.HIGH, butter.confidence)
+        assertTrue(result.followUpQuestions.isEmpty())
+    }
+
+    @Test
+    fun asksAboutTheShakiestIngredientWhenNothingElseIsOpen() {
+        val raw = """{"gericht":"Teller","zutaten":[{"name":"Gemischtes Gericht","gramm":300,"sicherheit":"niedrig","kcal":150,"protein":7,"kohlenhydrate":15,"fett":6.5}],"rueckfragen":[]}"""
+        val question = GemmaPrompt.parse(raw, "", 1, emptyList())!!.followUpQuestions.single()
+        assertTrue(question.text.startsWith("Wie viel"))
+        assertEquals(4, question.options.size)
+    }
+
+    @Test
+    fun usersOwnPortionAnswerWinsOverTheModel() {
+        val raw = """{"gericht":"Reis","zutaten":[{"name":"Reis (gekocht)","gramm":200,"sicherheit":"hoch","kcal":130,"protein":2.7,"kohlenhydrate":28,"fett":0.3}],"rueckfragen":[]}"""
+        val result = GemmaPrompt.parse(raw, "Reis mit Brokkoli", 1, emptyList())!!
+        val question = result.followUpQuestions.single()
+
+        val answered = GemmaPrompt.applyPortionAnswers(result, listOf(FollowUpAnswer(question.id, "Viel (240 g)")), "Reis mit Brokkoli")
+        val broccoli = answered.ingredients.first { it.name.startsWith("Brokkoli") }
+        assertEquals(240.0, broccoli.estimatedGrams, 0.0)
+        assertEquals(Confidence.HIGH, broccoli.confidence)
+        assertEquals(answered.ingredients, answered.context.ingredients)
+    }
+
+    @Test
+    fun promptNamesTheFoodsFromTheDescription() {
+        val prompt = GemmaPrompt.analysisPrompt("Reis mit Brokkoli", 1, emptyList())
+        assertTrue(prompt.contains("Der Nutzer nennt ausdrücklich: Reis, Brokkoli"))
     }
 
     @Test

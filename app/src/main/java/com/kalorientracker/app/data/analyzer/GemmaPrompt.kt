@@ -28,8 +28,10 @@ object GemmaPrompt {
         "kcal", "protein", "kohlenhydrate", "fett": realistische Durchschnittswerte pro 100 g der zubereiteten Zutat.
         Nenne versteckte Fette wie Bratöl, Butter oder Dressing als eigene Zutat, wenn sie wahrscheinlich sind.
         "sicherheit": "hoch" nur wenn Zutat und Menge klar erkennbar sind, sonst "mittel" oder "niedrig".
-        "rueckfragen": höchstens 3, nur wenn die Antwort die Kalorien deutlich ändert (z. B. welche Soße, paniert, Ölmenge), je 2 bis 4 kurze Optionen. Sonst leere Liste.
-        Die Beschreibung des Nutzers hat Vorrang vor dem Bild.
+        "rueckfragen": höchstens 3, wenn eine Zutat oder eine Menge unklar ist oder die Antwort die Kalorien deutlich ändert (z. B. welche Soße, paniert, Ölmenge), je 2 bis 4 kurze Optionen. Sonst leere Liste.
+        Foto und Beschreibung gehören zusammen: Das Foto zeigt die Mengen, die Beschreibung sagt, was es ist.
+        Jede in der Beschreibung genannte Zutat muss in "zutaten" stehen, auch wenn sie auf dem Foto verdeckt oder schlecht zu sehen ist.
+        Bei Widersprüchen gilt die Beschreibung des Nutzers.
         Antworte nur mit kompaktem JSON in einer Zeile, ohne Zeilenumbrüche, auf Deutsch, in diesem Format:
         {"gericht":"...","zutaten":[{"name":"...","gramm":0,"sicherheit":"hoch","kcal":0,"protein":0,"kohlenhydrate":0,"fett":0}],"rueckfragen":[{"frage":"...","optionen":["...","..."]}]}
     """.trimIndent()
@@ -52,6 +54,12 @@ object GemmaPrompt {
         if (photoCount == 0) append(" Es gibt kein Foto, nutze nur die Beschreibung.")
         append("\nBeschreibung des Nutzers: ")
         append(description.trim().ifEmpty { "(keine)" })
+        val anchors = DescriptionAnchors.of(description)
+        if (anchors.isNotEmpty()) {
+            append("\nDer Nutzer nennt ausdrücklich: ")
+            append(anchors.joinToString(", ") { it.shortName })
+            append(". Diese Zutaten müssen in \"zutaten\" vorkommen, auch wenn du sie im Foto nicht sicher siehst.")
+        }
         if (corrections.isNotEmpty()) {
             append("\nErfahrungswerte dieses Nutzers (seine Portionen im Vergleich zu üblichen Schätzungen): ")
             append(corrections.take(8).joinToString(", ") { "${it.foodKey} ×${formatRatio(it.ratio)}" })
@@ -121,10 +129,15 @@ object GemmaPrompt {
             }
             if (merged.size >= MAX_INGREDIENTS) break
         }
-        val ingredients = merged.values.toList()
-        if (ingredients.isEmpty()) return null
+        if (merged.isEmpty()) return null
 
-        val questions = if (!allowQuestions) emptyList() else (root["rueckfragen"] as? JsonArray).orEmpty()
+        // Whatever the user named themselves is never dropped, even when the model overlooked it.
+        val anchors = DescriptionAnchors.of(description)
+        val missing = anchors.filterNot { DescriptionAnchors.covered(it, merged.values.toList()) }
+        val ingredients = merged.values.toList() +
+            missing.map { it.toIngredient(if (it.statedGrams) Confidence.HIGH else Confidence.LOW) }
+
+        val modelQuestions = if (!allowQuestions) emptyList() else (root["rueckfragen"] as? JsonArray).orEmpty()
             .mapNotNull { element ->
                 val o = element as? JsonObject ?: return@mapNotNull null
                 val text = o.string("frage")?.trim()?.takeIf { it.length >= 4 } ?: return@mapNotNull null
@@ -135,13 +148,17 @@ object GemmaPrompt {
                     .take(4)
                 if (options.size < 2) null else text to options
             }
-            .take(MAX_QUESTIONS)
             .mapIndexed { i, (text, options) -> FollowUpQuestion("gemma_$i", text, options) }
+
+        val questions = if (!allowQuestions) emptyList() else buildQuestions(modelQuestions, missing, ingredients, description, photoCount)
 
         val mealName = root.string("gericht")?.trim()?.takeIf { it.length >= 2 }?.take(MAX_NAME)
             ?: StubFoodAnalyzer.mealName(description, ingredients)
         val notes = buildList {
             add("Erkannt mit Gemma auf deinem Gerät – bitte Mengen kurz prüfen.")
+            if (missing.isNotEmpty()) {
+                add("Auf dem Foto nicht erkannt, aus deiner Beschreibung ergänzt: ${missing.joinToString { it.shortName }}.")
+            }
             if (photoCount >= 2) add("$photoCount Fotos wurden gemeinsam ausgewertet.")
             if (usedCorrections.isNotEmpty()) add("Deine üblichen Portionen wurden berücksichtigt: ${usedCorrections.joinToString()}.")
         }
@@ -151,6 +168,45 @@ object GemmaPrompt {
             followUpQuestions = questions,
             context = AnalysisContext(description, photoCount, ingredients, corrections, questions, SOURCE),
             notes = notes,
+        )
+    }
+
+    /**
+     * Rather than silently guessing, the app asks. Foods the model lost come first, then its own
+     * questions, and if nothing is open but the result is shaky it asks for the portion of the one
+     * ingredient it is least sure about.
+     */
+    private fun buildQuestions(
+        modelQuestions: List<FollowUpQuestion>,
+        missing: List<DescriptionAnchors.Anchor>,
+        ingredients: List<RecognizedIngredient>,
+        description: String,
+        photoCount: Int,
+    ): List<FollowUpQuestion> {
+        val forced = missing.filterNot { it.statedGrams }
+            .map { DescriptionAnchors.portionQuestion(it.name, it.shortName, it.grams) }
+        val questions = (forced + modelQuestions).distinctBy { it.text.lowercase() }.take(MAX_QUESTIONS)
+        if (questions.isNotEmpty()) return questions
+
+        // Nothing was flagged, but an unclear ingredient or a photo without any description still
+        // deserves one question instead of a silent estimate.
+        val uncertain = ingredients.firstOrNull { it.confidence == Confidence.LOW }
+            ?: ingredients.maxByOrNull { it.estimatedGrams }.takeIf { description.isBlank() && photoCount > 0 }
+            ?: return emptyList()
+        return listOf(
+            DescriptionAnchors.portionQuestion(uncertain.name, StubCatalog.shortName(uncertain.name), uncertain.estimatedGrams),
+        )
+    }
+
+    /** Applies the app's own portion answers on top of a result; the user's statement wins. */
+    fun applyPortionAnswers(result: AnalysisResult, answers: List<FollowUpAnswer>, description: String): AnalysisResult {
+        val anchors = DescriptionAnchors.of(description)
+        val ingredients = DescriptionAnchors.applyPortionAnswers(result.ingredients, answers, anchors)
+        if (ingredients == result.ingredients) return result
+        return result.copy(
+            ingredients = ingredients,
+            mealName = StubFoodAnalyzer.mealName(description, ingredients),
+            context = result.context.copy(ingredients = ingredients),
         )
     }
 

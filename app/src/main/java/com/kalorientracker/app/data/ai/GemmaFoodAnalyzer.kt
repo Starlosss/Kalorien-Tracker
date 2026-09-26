@@ -14,8 +14,10 @@ import com.google.ai.edge.litertlm.ThinkingConfig
 import com.kalorientracker.app.data.analyzer.AnalysisContext
 import com.kalorientracker.app.data.analyzer.AnalysisInput
 import com.kalorientracker.app.data.analyzer.AnalysisResult
+import com.kalorientracker.app.data.analyzer.DescriptionAnchors
 import com.kalorientracker.app.data.analyzer.FollowUpAnswer
 import com.kalorientracker.app.data.analyzer.GemmaPrompt
+import com.kalorientracker.app.data.analyzer.StubFoodAnalyzer
 import com.kalorientracker.app.data.image.PhotoStorage
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -61,13 +63,30 @@ class GemmaFoodAnalyzer @Inject constructor(
         }
     }
 
-    /** Follow-up answers are applied in a text-only round; the images are not needed again. */
+    /**
+     * Follow-up answers are applied in a text-only round; the images are not needed again.
+     * Portion answers the app asked for itself are applied directly – they need no model, and
+     * applying them last keeps the user's own statement above the model's estimate.
+     */
     suspend fun answerFollowUp(analysis: AnalysisContext, answers: List<FollowUpAnswer>): AnalysisResult? =
         withContext(Dispatchers.Default) {
-            val text = generate(listOf(Content.Text(GemmaPrompt.followUpPrompt(analysis, answers))))
-            GemmaPrompt.parse(text, analysis.description, analysis.photoCount, analysis.corrections, allowQuestions = false)
-                ?.let { it.copy(context = it.context.copy(photoCount = analysis.photoCount)) }
+            val forModel = answers.filterNot { it.questionId.startsWith(DescriptionAnchors.QUESTION_PREFIX) }
+            val base = if (forModel.isEmpty()) {
+                unchanged(analysis)
+            } else {
+                val text = generate(listOf(Content.Text(GemmaPrompt.followUpPrompt(analysis, forModel))))
+                GemmaPrompt.parse(text, analysis.description, analysis.photoCount, analysis.corrections, allowQuestions = false)
+                    ?.let { it.copy(context = it.context.copy(photoCount = analysis.photoCount)) }
+            }
+            base?.let { GemmaPrompt.applyPortionAnswers(it, answers, analysis.description) }
         }
+
+    private fun unchanged(analysis: AnalysisContext) = AnalysisResult(
+        mealName = StubFoodAnalyzer.mealName(analysis.description, analysis.ingredients),
+        ingredients = analysis.ingredients,
+        followUpQuestions = emptyList(),
+        context = analysis.copy(questions = emptyList()),
+    )
 
     private suspend fun generate(parts: List<Content>): String = mutex.withLock {
         releaseJob?.cancel()
