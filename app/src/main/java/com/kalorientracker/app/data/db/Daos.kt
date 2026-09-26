@@ -36,6 +36,10 @@ interface FoodDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(foods: List<FoodEntity>)
 
+    /** Used by the catalogue import: an existing barcode is never overwritten. */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertAllIgnoring(foods: List<FoodEntity>)
+
     @Query("SELECT COUNT(*) FROM foods WHERE source = :source")
     suspend fun countBySource(source: String): Int
 

@@ -2,6 +2,7 @@ package com.kalorientracker.app.data.repository
 
 import com.kalorientracker.app.data.db.FoodDao
 import com.kalorientracker.app.data.db.MealDao
+import com.kalorientracker.app.data.db.ProductCatalogImporter
 import com.kalorientracker.app.data.db.toDomain
 import com.kalorientracker.app.data.db.toEntity
 import com.kalorientracker.app.data.remote.OnlineProductSource
@@ -27,7 +28,11 @@ class FoodRepository @Inject constructor(
     private val mealDao: MealDao,
     private val online: OnlineProductSource,
     private val settings: SettingsRepository,
+    private val catalogImporter: ProductCatalogImporter,
 ) {
+    /** Whether the bundled barcode catalogue has finished importing into the local database. */
+    val catalogReady: Boolean get() = catalogImporter.isImported
+
     suspend fun search(query: String): List<Food> {
         val q = query.trim()
         if (q.isEmpty()) return emptyList()
@@ -51,6 +56,11 @@ class FoodRepository @Inject constructor(
      * Local database first; online only when enabled, and every online hit is cached locally.
      * A scanned code is tried in every common GTIN format (e.g. a 12-digit UPC-A is also tried
      * as its 13-digit EAN-13 form), since a product may be stored under either one.
+     *
+     * The bundled barcode catalogue (see [ProductCatalogImporter]) may still be importing in the
+     * background when this runs. That is not special-cased here on purpose: a local miss always
+     * falls through to the online path below (subject to the privacy toggle), so the user never
+     * sees "nicht gefunden" merely because the import has not finished yet.
      */
     suspend fun lookupBarcode(barcode: String): ProductLookup {
         val candidates = Gtin.candidates(barcode)
