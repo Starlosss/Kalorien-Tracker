@@ -4,7 +4,7 @@ enum class Goal(val label: String, val description: String) {
     LOSE("Abnehmen", "Körperfett reduzieren mit moderatem Defizit"),
     MAINTAIN("Gewicht halten", "Aktuelles Gewicht stabil halten"),
     GAIN("Zunehmen", "Gewicht mit leichtem Überschuss aufbauen"),
-    MUSCLE_BUILD("Muskelaufbau", "Ohne Fitnessstudio, mit Alltag, Sport und einem Home-Workout"),
+    MUSCLE_BUILD("Muskelaufbau", "Ohne Fitnessstudio, mit Alltag, Sport und auf Wunsch einem Home-Workout"),
 }
 
 enum class Sex(val label: String) {

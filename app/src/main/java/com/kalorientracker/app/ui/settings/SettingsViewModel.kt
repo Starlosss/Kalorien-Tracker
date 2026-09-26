@@ -179,7 +179,7 @@ class SettingsViewModel @Inject constructor(
             val totals = meals.observeDailyTotals(today - SuggestRecalibrationUseCase.WINDOW_DAYS, today).first()
             val suggestion = recalibrate(weights, totals, targets, profile.goal, profile.sex, today)
             if (suggestion == null) {
-                _message.value = "Keine Anpassung nötig, oder es fehlen noch Daten. Dafür braucht die App aus den letzten 28 Tagen mindestens 4 Gewichtseinträge über 14 Tage hinweg und 10 Tage mit Mahlzeiten."
+                _message.value = "Keine Anpassung nötig, oder es fehlen noch Daten. Die App schaut dafür auf die letzten 28 Tage. Darin braucht sie 10 Tage mit Mahlzeiten und mindestens 4 Gewichtseinträge. Zwischen dem ersten und dem letzten Gewicht müssen 14 Tage liegen."
             } else {
                 _proposal.value = PlanProposal(
                     "Beobachtet: Ø ${Fmt.int(suggestion.averageIntakeKcal)} kcal bei ${Fmt.signedKg(suggestion.weeklyWeightChangeKg)} pro Woche. " +

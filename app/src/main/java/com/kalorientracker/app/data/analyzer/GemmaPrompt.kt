@@ -159,7 +159,7 @@ object GemmaPrompt {
             if (missing.isNotEmpty()) {
                 add("Auf dem Foto nicht erkannt, aus deiner Beschreibung ergänzt: ${missing.joinToString { it.shortName }}.")
             }
-            if (photoCount >= 2) add("Alle $photoCount Fotos wurden zusammen ausgewertet.")
+            if (photoCount >= 2) add("$photoCount Fotos wurden gemeinsam ausgewertet.")
             if (usedCorrections.isNotEmpty()) add("Deine üblichen Portionen sind eingerechnet: ${usedCorrections.joinToString()}.")
         }
         return AnalysisResult(

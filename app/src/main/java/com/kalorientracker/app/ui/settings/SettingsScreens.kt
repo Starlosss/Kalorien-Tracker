@@ -243,7 +243,7 @@ private fun ProfileSection(profile: UserProfile?, onSave: (UserProfile) -> Unit)
         haptic = HapticEvent.Confirm,
     )
     if (parsed == null) {
-        Text("Eine Eingabe passt noch nicht. Bitte die Felder oben prüfen.", style = MaterialTheme.typography.bodySmall, color = Palette.TextTertiary, modifier = Modifier.padding(top = 8.dp))
+        Text("Bitte die Felder oben prüfen.", style = MaterialTheme.typography.bodySmall, color = Palette.TextTertiary, modifier = Modifier.padding(top = 8.dp))
     }
 }
 
