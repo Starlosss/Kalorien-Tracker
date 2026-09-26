@@ -34,18 +34,24 @@ class OpenFoodFactsSource @Inject constructor(
 ) : OnlineProductSource {
 
     override suspend fun byBarcode(barcode: String): Food? = withContext(Dispatchers.IO) {
-        val url = "$BASE/api/v2/product/${barcode.filter { it.isDigit() }}.json".toHttpUrl().newBuilder()
+        val digits = barcode.filter { it.isDigit() }
+        productFrom(DE_BASE, digits, barcode) ?: productFrom(WORLD_BASE, digits, barcode)
+    }
+
+    /** Looks the code up on one host; returns null both when it is unreachable and when it has no product. */
+    private fun productFrom(base: String, digits: String, barcode: String): Food? {
+        val url = "$base/api/v2/product/$digits.json".toHttpUrl().newBuilder()
             .addQueryParameter("fields", FIELDS)
             .build()
-        val root = fetch(url.toString()) ?: return@withContext null
+        val root = fetch(url.toString()) ?: return null
         val status = (root["status"] as? JsonPrimitive)?.contentOrNull
-        if (status != "1" && status != "success") return@withContext null
-        val product = root["product"] as? JsonObject ?: return@withContext null
-        parseProduct(product, barcode)
+        if (status != "1" && status != "success") return null
+        val product = root["product"] as? JsonObject ?: return null
+        return parseProduct(product, barcode)
     }
 
     override suspend fun search(query: String): List<Food> = withContext(Dispatchers.IO) {
-        val url = "$BASE/cgi/search.pl".toHttpUrl().newBuilder()
+        val url = "$WORLD_BASE/cgi/search.pl".toHttpUrl().newBuilder()
             .addQueryParameter("search_terms", query)
             .addQueryParameter("search_simple", "1")
             .addQueryParameter("action", "process")
@@ -104,8 +110,9 @@ class OpenFoodFactsSource @Inject constructor(
     }
 
     companion object {
-        private const val BASE = "https://world.openfoodfacts.org"
-        private const val USER_AGENT = "KalorienTracker/0.1 (Android; offline-first)"
+        private const val DE_BASE = "https://de.openfoodfacts.org"
+        private const val WORLD_BASE = "https://world.openfoodfacts.org"
+        private const val USER_AGENT = "KalorienTracker/0.2 (Android; https://github.com/Starlosss/Kalorien-Tracker)"
         private const val FIELDS = "product_name,brands,nutriments,serving_quantity"
     }
 }

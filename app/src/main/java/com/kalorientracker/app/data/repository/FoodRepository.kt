@@ -47,14 +47,23 @@ class FoodRepository @Inject constructor(
         return foodDao.search(base, limit = 1).firstOrNull()?.toDomain()
     }
 
-    /** Local database first; online only when enabled, and every online hit is cached locally. */
+    /**
+     * Local database first; online only when enabled, and every online hit is cached locally.
+     * A scanned code is tried in every common GTIN format (e.g. a 12-digit UPC-A is also tried
+     * as its 13-digit EAN-13 form), since a product may be stored under either one.
+     */
     suspend fun lookupBarcode(barcode: String): ProductLookup {
-        val code = barcode.trim()
-        foodDao.byBarcode(code)?.let { return ProductLookup.Found(it.toDomain(), fromOnline = false) }
+        val candidates = Gtin.candidates(barcode)
+        for (code in candidates) {
+            foodDao.byBarcode(code)?.let { return ProductLookup.Found(it.toDomain(), fromOnline = false) }
+        }
         if (!settings.current().onlineLookupEnabled) return ProductLookup.OnlineDisabled
         return try {
-            val remote = online.byBarcode(code) ?: return ProductLookup.NotFound
-            ProductLookup.Found(cache(remote.copy(barcode = code)), fromOnline = true)
+            for (code in candidates) {
+                val remote = online.byBarcode(code) ?: continue
+                return ProductLookup.Found(cache(remote.copy(barcode = code)), fromOnline = true)
+            }
+            ProductLookup.NotFound
         } catch (e: IOException) {
             ProductLookup.Offline
         }
