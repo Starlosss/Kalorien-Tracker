@@ -10,6 +10,9 @@
   USDA-Lebensmitteln. Spalten: `deutscher_name,fdc_id,portion_g,fndds_beschreibung`.
   Die vierte Spalte steht nur da, damit sich die Zuordnung ohne Nachschlagen
   pruefen laesst; das Skript liest sie nicht.
+- `dishes_block.json` ist die Merkliste von `dishes.py`: die Namen, die es zuletzt
+  geschrieben hat. Nur diese Eintraege darf es wieder entfernen. Nicht von Hand
+  aendern, das Skript schreibt sie bei jedem Lauf neu.
 - `base_foods_manual.json` ist die handgepflegte Liste mit 153 Grundnahrungsmitteln.
   Diese Datei ist die Quelle der Wahrheit fuer diese 153 Eintraege und wird nicht
   vom Skript veraendert. Die Namen darin (zum Beispiel "Reis (gekocht)") werden vom
@@ -61,10 +64,17 @@ Fuer die erzeugten Eintraege in `base_foods.json`:
 Fuer die Gerichte aus `dishes.py`:
 - jedes Gericht steht mit seiner `fdc_id` in `dishes_mapping.csv`
 - ein Gericht faellt weg, wenn die `fdc_id` in den USDA-Daten fehlt, kein
-  Energiewert vorhanden ist, einer der acht Naehrwerte fehlt oder der deutsche
-  Name schon in `base_foods.json` steht
-- die handgepflegten Namen haben Vorrang: `Currywurst`, `Lasagne`, `Falafel` und
-  andere bleiben so, wie sie in `base_foods_manual.json` stehen
+  Energiewert vorhanden ist oder einer der acht Naehrwerte fehlt
+- fremde Namen sind tabu: steht ein Name aus `dishes_mapping.csv` schon in der
+  handgepflegten Liste oder im aus Open Food Facts erzeugten Block, bricht der
+  Lauf ab, nennt die Zeile und schreibt nichts. Solche Zeilen muessen umbenannt
+  oder entfernt werden.
+- die handgepflegten Namen haben also Vorrang: `Currywurst`, `Lasagne`, `Falafel`
+  und andere bleiben so, wie sie in `base_foods_manual.json` stehen
+- der deutsche Name sagt, was in den Daten steht. Wo die USDA-Beschreibung eine
+  andere Sache meint als das gesuchte Gericht, heisst der Eintrag nach den Daten
+  (`Wiener Wuerstchen mit Sauerkraut`, `Burger-Patty`, `Rindfleischsuppe`,
+  `Bulgursalat`) oder faellt weg
 - Salz wird aus Natrium gerechnet: `Salz = Natrium in mg * 2,5 / 1000`
 - Kalorien ganzzahlig, Salz auf zwei Stellen, alles andere auf eine Stelle
   gerundet, wie im Rest der Datei
@@ -109,8 +119,10 @@ python3 tools/dishes.py
 ```
 
 Das Verzeichnis laesst sich ueber `FNDDS_DIR` umstellen. `dishes.py` entfernt vor
-dem Anhaengen alle Eintraege, deren Name in `dishes_mapping.csv` steht, und baut
-den Gerichte-Block danach neu auf. Zweimaliges Laufen aendert also nichts.
+dem Anhaengen genau die Eintraege, die in `dishes_block.json` stehen, also den
+eigenen Block aus dem letzten Lauf, und baut ihn danach neu auf. Zweimaliges
+Laufen aendert nichts, und eine umbenannte oder geloeschte Zeile der
+Zuordnungstabelle laesst keine Waise zurueck.
 
 Wichtig ist die Reihenfolge: `off_extract.py` schreibt `base_foods.json` komplett
 neu. Wer es nach `dishes.py` laufen laesst, verliert die Gerichte.

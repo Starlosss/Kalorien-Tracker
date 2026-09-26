@@ -8,9 +8,16 @@ gesetzte, gekochte Gerichte mit vollstaendigen Naehrwerten je 100 g.
 
 Uebersetzt werden nur die Namen. Kein Naehrwert wird geschaetzt oder angepasst.
 
-Das Skript ist deterministisch und mehrfach ausfuehrbar: es entfernt zuerst alle
-Eintraege, deren Name in der Zuordnungstabelle steht, und haengt den Gerichte-
-Block danach neu an. Zweimaliges Laufen erzeugt also keine Dubletten.
+Das Skript ist deterministisch und mehrfach ausfuehrbar. In `dishes_block.json`
+merkt es sich, welche Namen es zuletzt geschrieben hat. Beim naechsten Lauf
+entfernt es genau diese Eintraege und baut den Gerichte-Block neu auf. Deshalb
+bleibt keine Waise stehen, wenn eine Zeile der Zuordnungstabelle umbenannt oder
+geloescht wird, und zweimaliges Laufen erzeugt keine Dubletten.
+
+Fremde Eintraege fasst das Skript nie an. Steht ein Name aus der Zuordnungs-
+tabelle schon in der handgepflegten Liste oder im aus Open Food Facts erzeugten
+Block, bricht der Lauf mit einer Fehlermeldung ab und nennt die Zeile. Er
+ueberschreibt sie nicht.
 
 Reihenfolge: erst off_extract.py laufen lassen, dann dieses Skript. off_extract.py
 schreibt base_foods.json komplett neu und wuerde die Gerichte sonst entfernen.
@@ -24,6 +31,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 MAPPING = Path(__file__).resolve().parent / "dishes_mapping.csv"
+MANUAL = Path(__file__).resolve().parent / "base_foods_manual.json"
+# Merkliste: welche Namen dieses Skript zuletzt geschrieben hat. Nur diese
+# Eintraege darf es wieder entfernen.
+STATE = Path(__file__).resolve().parent / "dishes_block.json"
 OUT_JSON = ROOT / "app/src/main/assets/base_foods.json"
 
 # Heruntergeladen von
@@ -98,6 +109,24 @@ def read_mapping():
     return rows
 
 
+def read_own_block():
+    """Namen, die dieses Skript beim letzten Lauf geschrieben hat."""
+    if not STATE.is_file():
+        return []
+    data = json.loads(STATE.read_text(encoding="utf-8"))
+    if not isinstance(data, list):
+        fail("Merkliste ist keine Liste: " + str(STATE))
+    return [str(name) for name in data]
+
+
+def read_manual_names():
+    """Namen der handgepflegten Liste. Diese Eintraege sind unantastbar."""
+    if not MANUAL.is_file():
+        fail("Datei fehlt: " + str(MANUAL))
+    manual = json.loads(MANUAL.read_text(encoding="utf-8"))
+    return {entry["n"].strip().lower() for entry in manual}
+
+
 def main():
     if not OUT_JSON.is_file():
         fail("Datei fehlt: " + str(OUT_JSON))
@@ -108,15 +137,32 @@ def main():
     print("Zuordnung: " + str(len(rows)) + " Gerichte")
 
     foods = json.loads(OUT_JSON.read_text(encoding="utf-8"))
-    mapped_names = {row["deutscher_name"].strip().lower() for row in rows}
+    own = {name.strip().lower() for name in read_own_block()}
 
-    # Alten Gerichte-Block entfernen, damit ein zweiter Lauf nichts verdoppelt.
-    kept = [entry for entry in foods if entry["n"].strip().lower() not in mapped_names]
+    # Fremd ist alles, was nicht aus dem letzten Lauf dieses Skripts stammt.
+    # Die handgepflegte Liste zaehlt immer dazu, auch wenn die Merkliste luegt.
+    foreign = ({entry["n"].strip().lower() for entry in foods} - own) | read_manual_names()
+
+    # Erst pruefen, dann entfernen. Ein Name, der schon jemand anderem gehoert,
+    # bricht den Lauf ab. Sonst wuerde das Skript stillschweigend einen
+    # handgepflegten oder aus Open Food Facts erzeugten Eintrag loeschen.
+    clashes = [row["deutscher_name"] for row in rows
+               if row["deutscher_name"].strip().lower() in foreign]
+    if clashes:
+        for name in clashes:
+            print("  belegt: " + name, file=sys.stderr)
+        fail(str(len(clashes)) + " Name(n) aus dishes_mapping.csv stehen schon in "
+             + "base_foods.json und gehoeren nicht diesem Skript.\n"
+             + "Diese Zeilen umbenennen oder aus der Zuordnungstabelle entfernen. "
+             + "Es wurde nichts geschrieben.")
+
+    # Nur den eigenen Block entfernen. Das raeumt auch Eintraege weg, deren Zeile
+    # in der Zuordnungstabelle inzwischen umbenannt oder geloescht wurde.
+    kept = [entry for entry in foods if entry["n"].strip().lower() not in own]
     removed = len(foods) - len(kept)
     if removed:
         print("  vorhandenen Gerichte-Block entfernt: " + str(removed) + " Eintraege")
 
-    existing = {entry["n"].strip().lower() for entry in kept}
     dishes = []
     skipped = []
     seen = set()
@@ -128,9 +174,6 @@ def main():
 
         if key in seen:
             skipped.append((name, "in der Zuordnungstabelle doppelt"))
-            continue
-        if key in existing:
-            skipped.append((name, "Name gibt es in base_foods.json schon"))
             continue
         if fdc_id not in descriptions:
             skipped.append((name, "fdc_id " + fdc_id + " steht nicht in den FNDDS-Daten"))
@@ -172,6 +215,13 @@ def main():
     result = kept + dishes
     lines = [json.dumps(entry, ensure_ascii=False, separators=(",", ":")) for entry in result]
     OUT_JSON.write_text("[\n" + ",\n".join(lines) + "\n]\n", encoding="utf-8")
+
+    # Merkliste fuer den naechsten Lauf. Sortiert, damit sie sich nur aendert,
+    # wenn sich die Gerichte aendern.
+    STATE.write_text(
+        json.dumps(sorted(entry["n"] for entry in dishes), ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
     print("")
     print("Zusammenfassung")
