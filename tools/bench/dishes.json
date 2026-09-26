@@ -1,0 +1,1152 @@
+[
+ {
+  "dishId": "dish_1559667948",
+  "groundTruthKcal": 153.9,
+  "groundTruthMass": 57.0,
+  "description": "Bagel mit Frischkäse",
+  "ingredients": [
+   {
+    "en": "bagels",
+    "de": "Bagel",
+    "grams": 45.6,
+    "kcal": 114.0,
+    "keys": [
+     "bagel",
+     "brotchen"
+    ]
+   },
+   {
+    "en": "cream cheese",
+    "de": "Frischkäse",
+    "grams": 11.4,
+    "kcal": 39.9,
+    "keys": [
+     "frischkase",
+     "streichkase",
+     "kase"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1563205927",
+  "groundTruthKcal": 160.27,
+  "groundTruthMass": 181.0,
+  "description": "Eiweiß mit Hähnchen-Apfel-Bratwurst, Yamswurzel und Süßkartoffel",
+  "ingredients": [
+   {
+    "en": "egg whites",
+    "de": "Eiweiß",
+    "grams": 87.0,
+    "kcal": 45.2,
+    "keys": [
+     "eiweiss",
+     "eiklar",
+     "ei",
+     "eier",
+     "ruhrei",
+     "omelett"
+    ]
+   },
+   {
+    "en": "chicken apple sausage",
+    "de": "Hähnchen-Apfel-Bratwurst",
+    "grams": 35.0,
+    "kcal": 56.0,
+    "keys": [
+     "wurst",
+     "bratwurst",
+     "wurstchen",
+     "gefluegelwurst"
+    ]
+   },
+   {
+    "en": "yam",
+    "de": "Yamswurzel",
+    "grams": 29.5,
+    "kcal": 36.6,
+    "keys": [
+     "yams",
+     "yamswurzel",
+     "jamswurzel"
+    ]
+   },
+   {
+    "en": "sweet potato",
+    "de": "Süßkartoffel",
+    "grams": 29.5,
+    "kcal": 22.4,
+    "keys": [
+     "susskartoffel",
+     "batate"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1560961202",
+  "groundTruthKcal": 171.07,
+  "groundTruthMass": 153.0,
+  "description": "Rührei mit Brokkoli",
+  "ingredients": [
+   {
+    "en": "scrambled eggs",
+    "de": "Rührei",
+    "grams": 104.0,
+    "kcal": 153.9,
+    "keys": [
+     "ruhrei",
+     "ei",
+     "eier",
+     "omelett",
+     "spiegelei"
+    ]
+   },
+   {
+    "en": "broccoli",
+    "de": "Brokkoli",
+    "grams": 49.0,
+    "kcal": 17.1,
+    "keys": [
+     "brokkoli",
+     "broccoli"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1562086067",
+  "groundTruthKcal": 178.18,
+  "groundTruthMass": 209.0,
+  "description": "Beeren mit Yamswurzel",
+  "ingredients": [
+   {
+    "en": "berries",
+    "de": "Beeren",
+    "grams": 121.0,
+    "kcal": 69.0,
+    "keys": [
+     "beere",
+     "beeren",
+     "waldbeere",
+     "heidelbeere",
+     "blaubeere",
+     "erdbeere"
+    ]
+   },
+   {
+    "en": "yam",
+    "de": "Yamswurzel",
+    "grams": 88.0,
+    "kcal": 109.2,
+    "keys": [
+     "yams",
+     "yamswurzel",
+     "jamswurzel"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1566838351",
+  "groundTruthKcal": 190.01,
+  "groundTruthMass": 417.0,
+  "description": "Ananas mit Wassermelone und Beeren",
+  "ingredients": [
+   {
+    "en": "pineapple",
+    "de": "Ananas",
+    "grams": 145.0,
+    "kcal": 72.5,
+    "keys": [
+     "ananas"
+    ]
+   },
+   {
+    "en": "watermelon",
+    "de": "Wassermelone",
+    "grams": 139.0,
+    "kcal": 41.7,
+    "keys": [
+     "wassermelone",
+     "melone"
+    ]
+   },
+   {
+    "en": "berries",
+    "de": "Beeren",
+    "grams": 133.0,
+    "kcal": 75.8,
+    "keys": [
+     "beere",
+     "beeren",
+     "waldbeere",
+     "heidelbeere",
+     "blaubeere",
+     "erdbeere"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1558636028",
+  "groundTruthKcal": 199.35,
+  "groundTruthMass": 262.0,
+  "description": "Weintrauben mit Cantaloupe-Melone, Maiskolben und Mandeln",
+  "ingredients": [
+   {
+    "en": "grapes",
+    "de": "Weintrauben",
+    "grams": 136.0,
+    "kcal": 93.8,
+    "keys": [
+     "traube",
+     "trauben",
+     "weintraube"
+    ]
+   },
+   {
+    "en": "cantaloupe",
+    "de": "Cantaloupe-Melone",
+    "grams": 98.0,
+    "kcal": 33.3,
+    "keys": [
+     "melone",
+     "cantaloupe",
+     "honigmelone"
+    ]
+   },
+   {
+    "en": "corn on the cob",
+    "de": "Maiskolben",
+    "grams": 19.0,
+    "kcal": 20.2,
+    "keys": [
+     "mais",
+     "maiskolben"
+    ]
+   },
+   {
+    "en": "almonds",
+    "de": "Mandeln",
+    "grams": 9.0,
+    "kcal": 52.0,
+    "keys": [
+     "mandel",
+     "mandeln"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1564675157",
+  "groundTruthKcal": 208.93,
+  "groundTruthMass": 284.0,
+  "description": "Süßkartoffel mit Wassermelone, Weintrauben und Olivenöl",
+  "ingredients": [
+   {
+    "en": "sweet potato",
+    "de": "Süßkartoffel",
+    "grams": 157.1,
+    "kcal": 119.4,
+    "keys": [
+     "susskartoffel",
+     "batate"
+    ]
+   },
+   {
+    "en": "watermelon",
+    "de": "Wassermelone",
+    "grams": 77.0,
+    "kcal": 23.1,
+    "keys": [
+     "wassermelone",
+     "melone"
+    ]
+   },
+   {
+    "en": "grapes",
+    "de": "Weintrauben",
+    "grams": 46.0,
+    "kcal": 31.7,
+    "keys": [
+     "traube",
+     "trauben",
+     "weintraube"
+    ]
+   },
+   {
+    "en": "olive oil",
+    "de": "Olivenöl",
+    "grams": 3.9,
+    "kcal": 34.7,
+    "keys": [
+     "olivenol",
+     "speiseol",
+     "bratol",
+     "ol"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1563205953",
+  "groundTruthKcal": 218.77,
+  "groundTruthMass": 298.0,
+  "description": "Ananas mit Eiweiß, Hähnchen-Apfel-Bratwurst, Yamswurzel und Süßkartoffel",
+  "ingredients": [
+   {
+    "en": "pineapple",
+    "de": "Ananas",
+    "grams": 117.0,
+    "kcal": 58.5,
+    "keys": [
+     "ananas"
+    ]
+   },
+   {
+    "en": "egg whites",
+    "de": "Eiweiß",
+    "grams": 87.0,
+    "kcal": 45.2,
+    "keys": [
+     "eiweiss",
+     "eiklar",
+     "ei",
+     "eier",
+     "ruhrei",
+     "omelett"
+    ]
+   },
+   {
+    "en": "chicken apple sausage",
+    "de": "Hähnchen-Apfel-Bratwurst",
+    "grams": 35.0,
+    "kcal": 56.0,
+    "keys": [
+     "wurst",
+     "bratwurst",
+     "wurstchen",
+     "gefluegelwurst"
+    ]
+   },
+   {
+    "en": "yam",
+    "de": "Yamswurzel",
+    "grams": 29.5,
+    "kcal": 36.6,
+    "keys": [
+     "yams",
+     "yamswurzel",
+     "jamswurzel"
+    ]
+   },
+   {
+    "en": "sweet potato",
+    "de": "Süßkartoffel",
+    "grams": 29.5,
+    "kcal": 22.4,
+    "keys": [
+     "susskartoffel",
+     "batate"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1565884738",
+  "groundTruthKcal": 228.66,
+  "groundTruthMass": 463.0,
+  "description": "Eiweiß mit Wassermelone",
+  "ingredients": [
+   {
+    "en": "egg whites",
+    "de": "Eiweiß",
+    "grams": 408.0,
+    "kcal": 212.2,
+    "keys": [
+     "eiweiss",
+     "eiklar",
+     "ei",
+     "eier",
+     "ruhrei",
+     "omelett"
+    ]
+   },
+   {
+    "en": "watermelon",
+    "de": "Wassermelone",
+    "grams": 55.0,
+    "kcal": 16.5,
+    "keys": [
+     "wassermelone",
+     "melone"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1566317775",
+  "groundTruthKcal": 237.4,
+  "groundTruthMass": 410.0,
+  "description": "Haferbrei mit Himbeeren und Brombeeren",
+  "ingredients": [
+   {
+    "en": "oatmeal",
+    "de": "Haferbrei",
+    "grams": 182.0,
+    "kcal": 123.8,
+    "keys": [
+     "hafer",
+     "haferbrei",
+     "haferflocken",
+     "porridge"
+    ]
+   },
+   {
+    "en": "raspberries",
+    "de": "Himbeeren",
+    "grams": 156.0,
+    "kcal": 82.7,
+    "keys": [
+     "himbeere",
+     "beere"
+    ]
+   },
+   {
+    "en": "blackberries",
+    "de": "Brombeeren",
+    "grams": 72.0,
+    "kcal": 31.0,
+    "keys": [
+     "brombeere",
+     "beere"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1566844803",
+  "groundTruthKcal": 249.82,
+  "groundTruthMass": 227.0,
+  "description": "Caesar-Salat mit Salami-Pizza",
+  "ingredients": [
+   {
+    "en": "caesar salad",
+    "de": "Caesar-Salat",
+    "grams": 164.0,
+    "kcal": 72.2,
+    "keys": [
+     "caesar",
+     "salat",
+     "blattsalat"
+    ]
+   },
+   {
+    "en": "pepperoni pizza",
+    "de": "Salami-Pizza",
+    "grams": 63.0,
+    "kcal": 177.7,
+    "keys": [
+     "pizza",
+     "salamipizza"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1562172600",
+  "groundTruthKcal": 263.6,
+  "groundTruthMass": 370.0,
+  "description": "Eiweiß mit Bratkartoffeln",
+  "ingredients": [
+   {
+    "en": "egg whites",
+    "de": "Eiweiß",
+    "grams": 290.0,
+    "kcal": 150.8,
+    "keys": [
+     "eiweiss",
+     "eiklar",
+     "ei",
+     "eier",
+     "ruhrei",
+     "omelett"
+    ]
+   },
+   {
+    "en": "roasted potatoes",
+    "de": "Bratkartoffeln",
+    "grams": 80.0,
+    "kcal": 112.8,
+    "keys": [
+     "bratkartoffel",
+     "kartoffel",
+     "ofenkartoffel"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1563295360",
+  "groundTruthKcal": 275.89,
+  "groundTruthMass": 181.0,
+  "description": "Brokkoli mit Rührei, Speck und Olivenöl",
+  "ingredients": [
+   {
+    "en": "broccoli",
+    "de": "Brokkoli",
+    "grams": 82.9,
+    "kcal": 29.0,
+    "keys": [
+     "brokkoli",
+     "broccoli"
+    ]
+   },
+   {
+    "en": "scrambled eggs",
+    "de": "Rührei",
+    "grams": 74.0,
+    "kcal": 109.5,
+    "keys": [
+     "ruhrei",
+     "ei",
+     "eier",
+     "omelett",
+     "spiegelei"
+    ]
+   },
+   {
+    "en": "bacon",
+    "de": "Speck",
+    "grams": 22.0,
+    "kcal": 119.0,
+    "keys": [
+     "speck",
+     "bacon",
+     "fruhstucksspeck"
+    ]
+   },
+   {
+    "en": "olive oil",
+    "de": "Olivenöl",
+    "grams": 2.1,
+    "kcal": 18.3,
+    "keys": [
+     "olivenol",
+     "speiseol",
+     "bratol",
+     "ol"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1564761457",
+  "groundTruthKcal": 287.31,
+  "groundTruthMass": 223.0,
+  "description": "Eiweiß mit gebratenem Reis und Putenspeck",
+  "ingredients": [
+   {
+    "en": "egg whites",
+    "de": "Eiweiß",
+    "grams": 105.0,
+    "kcal": 54.6,
+    "keys": [
+     "eiweiss",
+     "eiklar",
+     "ei",
+     "eier",
+     "ruhrei",
+     "omelett"
+    ]
+   },
+   {
+    "en": "fried rice",
+    "de": "Gebratener Reis",
+    "grams": 97.0,
+    "kcal": 153.0,
+    "keys": [
+     "reis",
+     "bratreis"
+    ]
+   },
+   {
+    "en": "turkey bacon",
+    "de": "Putenspeck",
+    "grams": 21.0,
+    "kcal": 79.7,
+    "keys": [
+     "putenspeck",
+     "speck",
+     "pute",
+     "truthahn"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1559845018",
+  "groundTruthKcal": 302.43,
+  "groundTruthMass": 175.0,
+  "description": "Kartoffeln mit Mandarinen und Mandeln",
+  "ingredients": [
+   {
+    "en": "potatoes",
+    "de": "Kartoffeln",
+    "grams": 86.0,
+    "kcal": 66.2,
+    "keys": [
+     "kartoffel",
+     "kartoffeln",
+     "salzkartoffel"
+    ]
+   },
+   {
+    "en": "mandarin oranges",
+    "de": "Mandarinen",
+    "grams": 53.0,
+    "kcal": 28.1,
+    "keys": [
+     "mandarine",
+     "mandarinen",
+     "clementine",
+     "orange"
+    ]
+   },
+   {
+    "en": "almonds",
+    "de": "Mandeln",
+    "grams": 36.0,
+    "kcal": 208.1,
+    "keys": [
+     "mandel",
+     "mandeln"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1562691466",
+  "groundTruthKcal": 319.87,
+  "groundTruthMass": 267.0,
+  "description": "Rührei mit Yamswurzel, Brokkoli, Hähnchen-Apfel-Bratwurst und Olivenöl",
+  "ingredients": [
+   {
+    "en": "scrambled eggs",
+    "de": "Rührei",
+    "grams": 94.0,
+    "kcal": 139.1,
+    "keys": [
+     "ruhrei",
+     "ei",
+     "eier",
+     "omelett",
+     "spiegelei"
+    ]
+   },
+   {
+    "en": "yam",
+    "de": "Yamswurzel",
+    "grams": 70.0,
+    "kcal": 86.9,
+    "keys": [
+     "yams",
+     "yamswurzel",
+     "jamswurzel"
+    ]
+   },
+   {
+    "en": "broccoli",
+    "de": "Brokkoli",
+    "grams": 66.3,
+    "kcal": 23.2,
+    "keys": [
+     "brokkoli",
+     "broccoli"
+    ]
+   },
+   {
+    "en": "chicken apple sausage",
+    "de": "Hähnchen-Apfel-Bratwurst",
+    "grams": 35.0,
+    "kcal": 56.0,
+    "keys": [
+     "wurst",
+     "bratwurst",
+     "wurstchen",
+     "gefluegelwurst"
+    ]
+   },
+   {
+    "en": "olive oil",
+    "de": "Olivenöl",
+    "grams": 1.7,
+    "kcal": 14.7,
+    "keys": [
+     "olivenol",
+     "speiseol",
+     "bratol",
+     "ol"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1561049435",
+  "groundTruthKcal": 338.18,
+  "groundTruthMass": 257.0,
+  "description": "Rührei mit Cantaloupe-Melone, Himbeeren und Speck",
+  "ingredients": [
+   {
+    "en": "scrambled eggs",
+    "de": "Rührei",
+    "grams": 127.0,
+    "kcal": 188.0,
+    "keys": [
+     "ruhrei",
+     "ei",
+     "eier",
+     "omelett",
+     "spiegelei"
+    ]
+   },
+   {
+    "en": "cantaloupe",
+    "de": "Cantaloupe-Melone",
+    "grams": 60.0,
+    "kcal": 20.4,
+    "keys": [
+     "melone",
+     "cantaloupe",
+     "honigmelone"
+    ]
+   },
+   {
+    "en": "raspberries",
+    "de": "Himbeeren",
+    "grams": 51.0,
+    "kcal": 27.0,
+    "keys": [
+     "himbeere",
+     "beere"
+    ]
+   },
+   {
+    "en": "bacon",
+    "de": "Speck",
+    "grams": 19.0,
+    "kcal": 102.8,
+    "keys": [
+     "speck",
+     "bacon",
+     "fruhstucksspeck"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1561481606",
+  "groundTruthKcal": 354.09,
+  "groundTruthMass": 141.0,
+  "description": "Rührei mit Speck",
+  "ingredients": [
+   {
+    "en": "scrambled eggs",
+    "de": "Rührei",
+    "grams": 104.0,
+    "kcal": 153.9,
+    "keys": [
+     "ruhrei",
+     "ei",
+     "eier",
+     "omelett",
+     "spiegelei"
+    ]
+   },
+   {
+    "en": "bacon",
+    "de": "Speck",
+    "grams": 37.0,
+    "kcal": 200.2,
+    "keys": [
+     "speck",
+     "bacon",
+     "fruhstucksspeck"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1567613019",
+  "groundTruthKcal": 376.53,
+  "groundTruthMass": 645.0,
+  "description": "Eiweiß mit Süßkartoffel, Wassermelone und Olivenöl",
+  "ingredients": [
+   {
+    "en": "egg whites",
+    "de": "Eiweiß",
+    "grams": 369.0,
+    "kcal": 191.9,
+    "keys": [
+     "eiweiss",
+     "eiklar",
+     "ei",
+     "eier",
+     "ruhrei",
+     "omelett"
+    ]
+   },
+   {
+    "en": "sweet potato",
+    "de": "Süßkartoffel",
+    "grams": 151.2,
+    "kcal": 114.9,
+    "keys": [
+     "susskartoffel",
+     "batate"
+    ]
+   },
+   {
+    "en": "watermelon",
+    "de": "Wassermelone",
+    "grams": 121.0,
+    "kcal": 36.3,
+    "keys": [
+     "wassermelone",
+     "melone"
+    ]
+   },
+   {
+    "en": "olive oil",
+    "de": "Olivenöl",
+    "grams": 3.8,
+    "kcal": 33.4,
+    "keys": [
+     "olivenol",
+     "speiseol",
+     "bratol",
+     "ol"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1560360102",
+  "groundTruthKcal": 401.49,
+  "groundTruthMass": 248.0,
+  "description": "Rührei mit Beeren und Bratwurst",
+  "ingredients": [
+   {
+    "en": "scrambled eggs",
+    "de": "Rührei",
+    "grams": 131.0,
+    "kcal": 193.9,
+    "keys": [
+     "ruhrei",
+     "ei",
+     "eier",
+     "omelett",
+     "spiegelei"
+    ]
+   },
+   {
+    "en": "berries",
+    "de": "Beeren",
+    "grams": 68.0,
+    "kcal": 38.8,
+    "keys": [
+     "beere",
+     "beeren",
+     "waldbeere",
+     "heidelbeere",
+     "blaubeere",
+     "erdbeere"
+    ]
+   },
+   {
+    "en": "sausage",
+    "de": "Bratwurst",
+    "grams": 49.0,
+    "kcal": 168.9,
+    "keys": [
+     "wurst",
+     "bratwurst",
+     "wurstchen"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1558719514",
+  "groundTruthKcal": 433.29,
+  "groundTruthMass": 430.0,
+  "description": "Apfel mit Blumenkohl, Kirschtomaten, Maiskolben und Mandeln",
+  "ingredients": [
+   {
+    "en": "apple",
+    "de": "Apfel",
+    "grams": 142.0,
+    "kcal": 73.8,
+    "keys": [
+     "apfel",
+     "apfelstuck"
+    ]
+   },
+   {
+    "en": "cauliflower",
+    "de": "Blumenkohl",
+    "grams": 97.0,
+    "kcal": 24.2,
+    "keys": [
+     "blumenkohl"
+    ]
+   },
+   {
+    "en": "cherry tomatoes",
+    "de": "Kirschtomaten",
+    "grams": 96.0,
+    "kcal": 17.3,
+    "keys": [
+     "tomate",
+     "tomaten",
+     "kirschtomate",
+     "cocktailtomate"
+    ]
+   },
+   {
+    "en": "corn on the cob",
+    "de": "Maiskolben",
+    "grams": 49.0,
+    "kcal": 52.0,
+    "keys": [
+     "mais",
+     "maiskolben"
+    ]
+   },
+   {
+    "en": "almonds",
+    "de": "Mandeln",
+    "grams": 46.0,
+    "kcal": 265.9,
+    "keys": [
+     "mandel",
+     "mandeln"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1559849466",
+  "groundTruthKcal": 467.61,
+  "groundTruthMass": 262.0,
+  "description": "Birnen mit Mandeln",
+  "ingredients": [
+   {
+    "en": "pears",
+    "de": "Birnen",
+    "grams": 201.0,
+    "kcal": 115.0,
+    "keys": [
+     "birne",
+     "birnen"
+    ]
+   },
+   {
+    "en": "almonds",
+    "de": "Mandeln",
+    "grams": 61.0,
+    "kcal": 352.6,
+    "keys": [
+     "mandel",
+     "mandeln"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1566923060",
+  "groundTruthKcal": 515.82,
+  "groundTruthMass": 248.0,
+  "description": "Rührei mit Rösti, Ananas und Speck",
+  "ingredients": [
+   {
+    "en": "scrambled eggs",
+    "de": "Rührei",
+    "grams": 84.0,
+    "kcal": 124.3,
+    "keys": [
+     "ruhrei",
+     "ei",
+     "eier",
+     "omelett",
+     "spiegelei"
+    ]
+   },
+   {
+    "en": "hash browns",
+    "de": "Rösti",
+    "grams": 73.0,
+    "kcal": 238.0,
+    "keys": [
+     "rosti",
+     "kartoffelpuffer",
+     "reibekuchen",
+     "hash"
+    ]
+   },
+   {
+    "en": "pineapple",
+    "de": "Ananas",
+    "grams": 69.0,
+    "kcal": 34.5,
+    "keys": [
+     "ananas"
+    ]
+   },
+   {
+    "en": "bacon",
+    "de": "Speck",
+    "grams": 22.0,
+    "kcal": 119.0,
+    "keys": [
+     "speck",
+     "bacon",
+     "fruhstucksspeck"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1566849987",
+  "groundTruthKcal": 562.97,
+  "groundTruthMass": 540.0,
+  "description": "Hähnchen mit Kirschtomaten, Karotten, Oliven und Zwiebeln",
+  "ingredients": [
+   {
+    "en": "chicken",
+    "de": "Hähnchen",
+    "grams": 252.0,
+    "kcal": 415.8,
+    "keys": [
+     "hahnchen",
+     "huhn",
+     "hahnchenbrust",
+     "poulet",
+     "gefluegel",
+     "geflugel"
+    ]
+   },
+   {
+    "en": "cherry tomatoes",
+    "de": "Kirschtomaten",
+    "grams": 87.0,
+    "kcal": 15.7,
+    "keys": [
+     "tomate",
+     "tomaten",
+     "kirschtomate",
+     "cocktailtomate"
+    ]
+   },
+   {
+    "en": "carrot",
+    "de": "Karotten",
+    "grams": 86.0,
+    "kcal": 35.3,
+    "keys": [
+     "karotte",
+     "mohre",
+     "mohren",
+     "karotten"
+    ]
+   },
+   {
+    "en": "olives",
+    "de": "Oliven",
+    "grams": 67.0,
+    "kcal": 77.0,
+    "keys": [
+     "olive",
+     "oliven"
+    ]
+   },
+   {
+    "en": "onions",
+    "de": "Zwiebeln",
+    "grams": 48.0,
+    "kcal": 19.2,
+    "keys": [
+     "zwiebel",
+     "zwiebeln"
+    ]
+   }
+  ]
+ },
+ {
+  "dishId": "dish_1568666329",
+  "groundTruthKcal": 743.76,
+  "groundTruthMass": 594.0,
+  "description": "Hähnchen mit Kopfsalat, Artischocken, Brokkoli und Olivenöl",
+  "ingredients": [
+   {
+    "en": "chicken",
+    "de": "Hähnchen",
+    "grams": 212.0,
+    "kcal": 349.8,
+    "keys": [
+     "hahnchen",
+     "huhn",
+     "hahnchenbrust",
+     "poulet",
+     "gefluegel",
+     "geflugel"
+    ]
+   },
+   {
+    "en": "lettuce",
+    "de": "Kopfsalat",
+    "grams": 190.0,
+    "kcal": 28.5,
+    "keys": [
+     "salat",
+     "kopfsalat",
+     "blattsalat",
+     "gruner"
+    ]
+   },
+   {
+    "en": "artichokes",
+    "de": "Artischocken",
+    "grams": 80.0,
+    "kcal": 37.6,
+    "keys": [
+     "artischock",
+     "artischocke"
+    ]
+   },
+   {
+    "en": "broccoli",
+    "de": "Brokkoli",
+    "grams": 78.0,
+    "kcal": 27.3,
+    "keys": [
+     "brokkoli",
+     "broccoli"
+    ]
+   },
+   {
+    "en": "olive oil",
+    "de": "Olivenöl",
+    "grams": 34.0,
+    "kcal": 300.6,
+    "keys": [
+     "olivenol",
+     "speiseol",
+     "bratol",
+     "ol"
+    ]
+   }
+  ]
+ }
+]
