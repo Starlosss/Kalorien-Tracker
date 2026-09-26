@@ -7,7 +7,15 @@ import com.kalorientracker.app.domain.model.UserProfile
 import kotlin.math.max
 import kotlin.math.roundToInt
 
-/** Turns a maintenance estimate into a goal-specific calorie target and nutrient targets. */
+/**
+ * Turns a maintenance estimate into a goal-specific calorie target and nutrient targets.
+ *
+ * The reference values follow the DGE: fat 30 % of energy (35 % for physically active people),
+ * carbohydrates the remainder (> 50 %), fibre at least 30 g and 14.6 g per 1000 kcal, free sugars
+ * and saturated fat at most 10 % of energy each, salt 6 g. Protein is the one place where the app
+ * aims higher than the DGE's 0.8 g/kg: for the training and weight goals it uses the range of the
+ * ISSN position stand (1.4–2.0 g/kg), never less than the DGE reference.
+ */
 class CalculateMacroTargetsUseCase {
 
     operator fun invoke(
@@ -29,8 +37,12 @@ class CalculateMacroTargetsUseCase {
     ): GoalTargets {
         val kcal = targetKcal.toDouble()
         val proteinPerKg = proteinPerKg(profile.goal)
-        val protein = (proteinPerKg * referenceWeight(profile)).coerceAtMost(kcal * MAX_PROTEIN_SHARE / 4.0)
-        val fat = max(kcal * FAT_SHARE / 9.0, MIN_FAT_PER_KG * profile.weightKg)
+        // The share cap keeps the plan balanced, but the DGE minimum wins over it.
+        val protein = (proteinPerKg * referenceWeight(profile))
+            .coerceAtMost(kcal * MAX_PROTEIN_SHARE / 4.0)
+            .coerceAtLeast(DGE_PROTEIN_PER_KG * profile.weightKg)
+        val fatShare = if (isPhysicallyActive(profile)) FAT_SHARE_ACTIVE else FAT_SHARE
+        val fat = max(kcal * fatShare / 9.0, MIN_FAT_PER_KG * profile.weightKg)
         val carbs = ((kcal - protein * 4.0 - fat * 9.0) / 4.0).coerceAtLeast(MIN_CARBS_G)
         return GoalTargets(
             effectiveFromEpochDay = effectiveFromEpochDay,
@@ -39,7 +51,7 @@ class CalculateMacroTargetsUseCase {
             proteinG = protein.roundToInt(),
             carbsG = carbs.roundToInt(),
             fatG = fat.roundToInt(),
-            fiberG = (kcal / 1000.0 * 14.0).roundToInt(),
+            fiberG = max(MIN_FIBER_G, kcal / 1000.0 * FIBER_PER_1000_KCAL).roundToInt(),
             sugarMaxG = (kcal * 0.10 / 4.0).roundToInt(),
             saturatedFatMaxG = (kcal * 0.10 / 9.0).roundToInt(),
             saltMaxG = 6.0,
@@ -48,10 +60,28 @@ class CalculateMacroTargetsUseCase {
     }
 
     companion object {
-        const val FAT_SHARE = 0.27
+        /** DGE guideline value for fat, and the higher one it grants physically active people. */
+        const val FAT_SHARE = 0.30
+        const val FAT_SHARE_ACTIVE = 0.35
         const val MAX_PROTEIN_SHARE = 0.35
         const val MIN_FAT_PER_KG = 0.6
         const val MIN_CARBS_G = 50.0
+
+        /** The DGE grants the higher fat share to people who move a lot or train regularly. */
+        fun isPhysicallyActive(profile: UserProfile): Boolean {
+            val pal = CalculateTdeeUseCase.palForSteps(profile.dailySteps)
+            val sport = profile.activities.sumOf { CalculateTdeeUseCase.sportKcalPerDay(it, profile.weightKg) }
+            return CalculateTdeeUseCase.isPhysicallyActive(pal, sport.roundToInt())
+        }
+
+        /** DGE reference value for adults aged 19 to 65; the app never targets less. */
+        const val DGE_PROTEIN_PER_KG = 0.8
+        const val FIBER_PER_1000_KCAL = 14.6
+        const val MIN_FIBER_G = 30.0
+
+        const val SOURCE_NUTRIENTS = "DGE-Referenzwerte für die Nährstoffzufuhr"
+        const val SOURCE_PROTEIN_SPORT = "ISSN Position Stand: Protein and Exercise (2017)"
+        const val SOURCE_DEFICIT = "S3-Leitlinie Adipositas (DAG u. a.)"
 
         fun goalDelta(goal: Goal): Int = when (goal) {
             Goal.LOSE -> -500
@@ -86,7 +116,11 @@ class CalculateMacroTargetsUseCase {
 
         fun roundToTen(value: Int): Int = ((value + 5) / 10) * 10
 
-        /** Approximate weekly weight change caused by a daily calorie difference (7700 kcal ≈ 1 kg). */
+        /**
+         * Approximate weekly weight change from a daily calorie difference (7700 kcal ≈ 1 kg fat).
+         * The S3 obesity guideline expects about 0.5 kg per week from a 500 kcal daily deficit,
+         * which this matches.
+         */
         fun weeklyWeightChangeKg(dailyDeltaKcal: Int): Double = dailyDeltaKcal * 7.0 / 7700.0
     }
 }

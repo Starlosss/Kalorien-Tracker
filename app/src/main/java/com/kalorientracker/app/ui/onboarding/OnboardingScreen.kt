@@ -56,6 +56,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kalorientracker.app.domain.model.Difficulty
 import com.kalorientracker.app.domain.model.Goal
+import com.kalorientracker.app.domain.usecase.BodyMetrics
+import com.kalorientracker.app.domain.usecase.CalculateTdeeUseCase
 import com.kalorientracker.app.domain.model.Metric
 import com.kalorientracker.app.domain.model.Sex
 import com.kalorientracker.app.domain.usecase.ActivityCatalog
@@ -64,6 +66,7 @@ import com.kalorientracker.app.ui.common.NumberField
 import com.kalorientracker.app.ui.common.NutrientRow
 import com.kalorientracker.app.ui.common.PrimaryButton
 import com.kalorientracker.app.ui.common.SectionLabel
+import com.kalorientracker.app.ui.common.SourceNote
 import com.kalorientracker.app.ui.common.SelectChip
 import com.kalorientracker.app.ui.common.ToggleRow
 import com.kalorientracker.app.ui.theme.GlassCard
@@ -225,7 +228,7 @@ private fun SelectableCard(title: String, text: String, selected: Boolean, onCli
 @Composable
 private fun BodyStep(state: OnboardingState, vm: OnboardingViewModel) {
     StepTitle("Schritt 2 · Körperdaten", "Ein paar Eckdaten", "Nur für die Berechnung deines Bedarfs. Alles bleibt auf dem Gerät.")
-    SectionLabel("Geschlecht (für den Grundumsatz)")
+    SectionLabel("Geschlecht (für den Energiebedarf)")
     Spacer(Modifier.height(8.dp))
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Sex.entries.forEach { SelectChip(it.label, state.sex == it, { vm.setSex(it) }) }
@@ -239,6 +242,23 @@ private fun BodyStep(state: OnboardingState, vm: OnboardingViewModel) {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         NumberField(state.weight, vm::setWeight, "Gewicht", Modifier.weight(1f), suffix = "kg")
         NumberField(state.targetWeight, vm::setTargetWeight, "Zielgewicht (optional)", Modifier.weight(1f), suffix = "kg")
+    }
+    val bmi = BodyMetrics.bmi(
+        state.weight.replace(',', '.').toDoubleOrNull() ?: 0.0,
+        state.height.replace(',', '.').toDoubleOrNull() ?: 0.0,
+    )
+    if (bmi != null) {
+        Spacer(Modifier.height(12.dp))
+        Text(
+            "BMI ${Fmt.one(bmi)} · ${BodyMetrics.classify(bmi)}",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Palette.TextSecondary,
+        )
+        Text(
+            "Einordnung nach WHO. Für den Kalorienbedarf zählt die Größe nicht mit – die Formel der DGE nutzt Gewicht und Alter.",
+            style = MaterialTheme.typography.bodySmall,
+            color = Palette.TextTertiary,
+        )
     }
     val error = state.bodyError
     if (error != null && (state.age.isNotEmpty() || state.height.isNotEmpty() || state.weight.isNotEmpty())) {
@@ -386,14 +406,16 @@ private fun ResultStep(state: OnboardingState) {
     SectionLabel("So wurde gerechnet")
     Spacer(Modifier.height(8.dp))
     val parts = buildList {
-        add("Grundumsatz ${Fmt.int(tdee.bmr)} kcal (Mifflin-St Jeor)")
-        add("× ${Fmt.one(tdee.stepMultiplier)} für ${Fmt.int(state.dailySteps)} Schritte = ${Fmt.int(tdee.everydayKcal)} kcal")
+        add("Ruheenergieverbrauch ${Fmt.int(tdee.restingKcal)} kcal (Formel der DGE)")
+        add("× ${Fmt.one(tdee.pal)} für ${Fmt.int(state.dailySteps)} Schritte, ${CalculateTdeeUseCase.palLabel(tdee.pal)} = ${Fmt.int(tdee.everydayKcal)} kcal")
         if (tdee.sportKcalPerDay > 0) add("+ ${Fmt.int(tdee.sportKcalPerDay)} kcal/Tag durch Sport")
         if (tdee.workoutKcalPerDay > 0) add("+ ${Fmt.int(tdee.workoutKcalPerDay)} kcal/Tag durch Home-Workout")
         val delta = targets.targetKcal - targets.maintenanceKcal
         if (delta != 0) add("${if (delta > 0) "+" else "−"} ${Fmt.int(kotlin.math.abs(delta))} kcal für dein Ziel „${state.goal?.label}“")
     }
     parts.forEach { Text(it, style = MaterialTheme.typography.bodyMedium, color = Palette.TextSecondary, modifier = Modifier.padding(vertical = 2.dp)) }
+    Spacer(Modifier.height(16.dp))
+    SourceNote()
 }
 
 @Composable

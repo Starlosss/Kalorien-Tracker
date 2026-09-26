@@ -32,18 +32,22 @@ class NutritionPlanTest {
         activities = activities,
     )
 
+    /** The equation the DGE publishes, checked against its own worked examples. */
     @Test
-    fun bmrUsesMifflinStJeor() {
-        assertEquals(1780.0, CalculateTdeeUseCase.bmr(80.0, 180.0, 30, Sex.MALE), 0.001)
-        assertEquals(1345.25, CalculateTdeeUseCase.bmr(60.0, 165.0, 25, Sex.FEMALE), 0.001)
+    fun restingEnergyFollowsTheDgeEquation() {
+        assertEquals(1667.0, CalculateTdeeUseCase.restingKcal(71.0, 40, Sex.MALE), 1.0)
+        assertEquals(1302.0, CalculateTdeeUseCase.restingKcal(60.0, 40, Sex.FEMALE), 1.0)
+        assertEquals(1802.87, CalculateTdeeUseCase.restingKcal(80.0, 30, Sex.MALE), 0.01)
     }
 
     @Test
-    fun stepsScaleEverydayEnergy() {
+    fun stepsPickThePalValue() {
         val result = tdee(profile(steps = 8_000))
-        assertEquals(1.5, result.stepMultiplier, 0.0)
-        assertEquals(2670, result.tdee)
+        assertEquals(1.7, result.pal, 0.0)
+        assertEquals(3065, result.tdee)
         assertTrue(tdee(profile(steps = 2_000)).tdee < tdee(profile(steps = 13_000)).tdee)
+        assertEquals(1.4, CalculateTdeeUseCase.palForSteps(1_000), 0.0)
+        assertEquals(1.9, CalculateTdeeUseCase.palForSteps(20_000), 0.0)
     }
 
     @Test
@@ -51,12 +55,12 @@ class NutritionPlanTest {
         val running = SportActivity("Laufen", sessionsPerWeek = 3, minutesPerSession = 45)
         val result = tdee(profile(activities = listOf(running)))
         assertEquals(206, result.sportKcalPerDay)
-        assertEquals(2670 + 206, result.tdee)
+        assertEquals(3065 + 206, result.tdee)
     }
 
     @Test
     fun workoutPlanEnergyIsIncluded() {
-        assertEquals(2670 + 150, tdee(profile(), workoutKcalPerDay = 150).tdee)
+        assertEquals(3065 + 150, tdee(profile(), workoutKcalPerDay = 150).tdee)
     }
 
     @Test
@@ -84,6 +88,28 @@ class NutritionPlanTest {
         val muscle = macros(profile(goal = Goal.MUSCLE_BUILD), 2670, 0)
         assertEquals(128, maintain.proteinG)
         assertEquals(160, muscle.proteinG)
+    }
+
+    /** Pins the published reference values the plan is built on. */
+    @Test
+    fun nutrientTargetsFollowTheDgeReferenceValues() {
+        val sitting = macros(profile(steps = 2_000), 2670, 0)
+        assertEquals(89, sitting.fatG)
+
+        val active = macros(profile(steps = 8_000), 2670, 0)
+        assertEquals(104, active.fatG)
+
+        assertEquals(39, active.fiberG)
+        assertEquals(67, active.sugarMaxG)
+        assertEquals(30, active.saturatedFatMaxG)
+        assertEquals(6.0, active.saltMaxG, 0.0)
+    }
+
+    @Test
+    fun proteinNeverFallsBelowTheDgeReferenceValue() {
+        val heavy = profile(goal = Goal.LOSE, weight = 150.0, target = 90.0)
+        val targets = macros(heavy, maintenanceKcal = 1800, effectiveFromEpochDay = 0)
+        assertTrue(targets.proteinG >= (CalculateMacroTargetsUseCase.DGE_PROTEIN_PER_KG * 150).toInt())
     }
 
     @Test

@@ -6,15 +6,19 @@ import com.kalorientracker.app.domain.model.UserProfile
 import kotlin.math.roundToInt
 
 data class TdeeResult(
-    val bmr: Int,
-    val stepMultiplier: Double,
+    /** Resting energy expenditure in kcal per day, as the DGE derives its reference values. */
+    val restingKcal: Int,
+    val pal: Double,
     val everydayKcal: Int,
     val sportKcalPerDay: Int,
     val workoutKcalPerDay: Int,
     val tdee: Int,
 )
 
-/** Metabolic equivalents for the activities offered in onboarding. */
+/**
+ * Metabolic equivalents from the Compendium of Physical Activities (Ainsworth et al.),
+ * the reference table behind practically every MET-based estimate.
+ */
 object ActivityCatalog {
     const val HOME_WORKOUT = "Home-Workout"
 
@@ -43,20 +47,23 @@ object ActivityCatalog {
 }
 
 /**
- * Mifflin-St Jeor BMR, scaled by an everyday-movement factor derived from daily steps,
- * plus the net energy of planned sport sessions averaged over the week.
+ * Daily energy need the way the German Nutrition Society (DGE) derives its reference values:
+ * resting energy expenditure × PAL (physical activity level).
+ *
+ * The app picks the PAL from the daily step count and adds planned sport on top, which is what
+ * the DGE allows for people who train several times a week.
  */
 class CalculateTdeeUseCase {
 
     operator fun invoke(profile: UserProfile, workoutKcalPerDay: Int = 0): TdeeResult {
-        val bmr = bmr(profile.weightKg, profile.heightCm, profile.age, profile.sex)
-        val multiplier = stepMultiplier(profile.dailySteps)
-        val everyday = bmr * multiplier
+        val resting = restingKcal(profile.weightKg, profile.age, profile.sex)
+        val pal = palForSteps(profile.dailySteps)
+        val everyday = resting * pal
         val sport = profile.activities.sumOf { sportKcalPerDay(it, profile.weightKg) }
         val tdee = everyday + sport + workoutKcalPerDay
         return TdeeResult(
-            bmr = bmr.roundToInt(),
-            stepMultiplier = multiplier,
+            restingKcal = resting.roundToInt(),
+            pal = pal,
             everydayKcal = everyday.roundToInt(),
             sportKcalPerDay = sport.roundToInt(),
             workoutKcalPerDay = workoutKcalPerDay,
@@ -65,28 +72,52 @@ class CalculateTdeeUseCase {
     }
 
     companion object {
-        fun bmr(weightKg: Double, heightCm: Double, age: Int, sex: Sex): Double {
-            val base = 10.0 * weightKg + 6.25 * heightCm - 5.0 * age
-            return when (sex) {
-                Sex.MALE -> base + 5.0
-                Sex.FEMALE -> base - 161.0
+        /** Sources shown in the app so every number can be checked. */
+        const val SOURCE_ENERGY = "DGE: Fragen und Antworten zur Energiezufuhr (2015)"
+        const val SOURCE_MET = "Compendium of Physical Activities (Ainsworth et al.)"
+
+        /**
+         * Resting energy expenditure in kcal per day, exactly the equation the DGE publishes
+         * (result in MJ, converted with 239 kcal/MJ). It deliberately uses weight and age only.
+         */
+        fun restingKcal(weightKg: Double, age: Int, sex: Sex): Double {
+            val megajoules = when (sex) {
+                Sex.MALE -> 0.047 * weightKg + 1.009 - 0.01452 * age + 3.21
+                Sex.FEMALE -> 0.047 * weightKg - 0.01452 * age + 3.21
             }
+            return megajoules * KCAL_PER_MJ
         }
 
-        fun stepMultiplier(steps: Int): Double = when {
-            steps < 3_000 -> 1.2
-            steps < 5_000 -> 1.3
-            steps < 7_500 -> 1.4
-            steps < 10_000 -> 1.5
-            steps < 12_500 -> 1.6
-            else -> 1.7
+        /**
+         * PAL for everyday movement. The DGE's categories: 1.4–1.5 almost only sitting,
+         * 1.6–1.7 sitting plus some walking and standing, 1.8–1.9 mostly standing and walking.
+         * Sport is not part of this – it is added separately.
+         */
+        fun palForSteps(steps: Int): Double = when {
+            steps < 3_000 -> 1.4
+            steps < 5_000 -> 1.5
+            steps < 7_500 -> 1.6
+            steps < 10_000 -> 1.7
+            steps < 12_500 -> 1.8
+            else -> 1.9
         }
 
-        /** Net kcal above resting (MET − 1) so the BMR is not counted twice. */
+        fun palLabel(pal: Double): String = when {
+            pal <= 1.5 -> "überwiegend sitzend"
+            pal <= 1.7 -> "sitzend mit etwas Bewegung"
+            else -> "viel auf den Beinen"
+        }
+
+        /** True from the activity level at which the DGE allows a higher fat share. */
+        fun isPhysicallyActive(pal: Double, sportKcalPerDay: Int): Boolean = pal >= 1.7 || sportKcalPerDay >= 300
+
+        /** Net kcal above resting (MET − 1) so the resting energy is not counted twice. */
         fun sportKcalPerDay(activity: SportActivity, weightKg: Double): Double {
             val met = ActivityCatalog.metFor(activity.name)
             val perSession = (met - 1.0) * weightKg * (activity.minutesPerSession / 60.0)
             return perSession * activity.sessionsPerWeek / 7.0
         }
+
+        private const val KCAL_PER_MJ = 239.0
     }
 }

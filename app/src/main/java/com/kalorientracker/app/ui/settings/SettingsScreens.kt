@@ -56,6 +56,7 @@ import com.kalorientracker.app.ui.common.PrimaryButton
 import com.kalorientracker.app.ui.common.ScreenHeader
 import com.kalorientracker.app.ui.common.SecondaryButton
 import com.kalorientracker.app.ui.common.SectionLabel
+import com.kalorientracker.app.ui.common.SourceNote
 import com.kalorientracker.app.ui.common.SelectChip
 import com.kalorientracker.app.ui.common.ToggleRow
 import com.kalorientracker.app.ui.navigation.SettingsSection
@@ -307,6 +308,8 @@ private fun PlanSection(state: SettingsUiState, vm: SettingsViewModel) {
         style = MaterialTheme.typography.bodySmall,
         color = Palette.TextTertiary,
     )
+    Spacer(Modifier.height(24.dp))
+    SourceNote()
 }
 
 @Composable
