@@ -147,11 +147,20 @@ class GemmaPromptTest {
         assertEquals(listOf("Reis (gekocht)", "Hähnchenbrust (gebraten)", "Brokkoli (gegart)"), result.ingredients.map { it.name })
         val broccoli = result.ingredients.last()
         assertEquals(Confidence.LOW, broccoli.confidence)
+        // Nobody knows how much broccoli is on the plate, so the app claims none of it until asked.
+        assertEquals(DescriptionAnchors.UNKNOWN_AMOUNT_GRAMS, broccoli.estimatedGrams, 0.0)
         assertTrue(result.notes.any { it.contains("Brokkoli") })
+        assertTrue(result.notes.any { it.contains("Menge") && it.contains("Brokkoli") })
 
         val question = result.followUpQuestions.single()
         assertEquals("Wie viel Brokkoli war dabei?", question.text)
         assertEquals(DescriptionAnchors.QUESTION_PREFIX + broccoli.foodKey, question.id)
+        // The question still offers real portions; only the ingredient waits without one.
+        assertEquals(listOf("Wenig (75 g)", "Normal (150 g)", "Viel (240 g)", DescriptionAnchors.OPTION_ABSENT), question.options)
+
+        val answered = GemmaPrompt.applyPortionAnswers(result, listOf(FollowUpAnswer(question.id, "Normal (150 g)")), "Reis mit Hähnchen und Brokkoli")
+        assertEquals(150.0, answered.ingredients.last().estimatedGrams, 0.0)
+        assertEquals(Confidence.HIGH, answered.ingredients.last().confidence)
     }
 
     @Test

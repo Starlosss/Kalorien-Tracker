@@ -20,6 +20,18 @@ object DescriptionAnchors {
     const val OPTION_ABSENT = "War doch nicht dabei"
     const val MAX_ANCHORS = 6
 
+    /**
+     * What an anchor weighs when the model did not report it at all.
+     *
+     * The user named the food, so it belongs in the list. How much of it lies on the plate is
+     * something nobody has said and the model did not see, so the app must not answer that
+     * question on its own: a catalogue portion here is a guess that reads like a measurement and
+     * lands in the daily total unnoticed. A token gram keeps the food visible, keeps it out of the
+     * calories, and is obvious enough on screen that the portion question next to it is the thing
+     * to act on.
+     */
+    const val UNKNOWN_AMOUNT_GRAMS = 1.0
+
     data class Anchor(
         val name: String,
         val shortName: String,
@@ -34,6 +46,13 @@ object DescriptionAnchors {
 
         fun toIngredient(confidence: Confidence): RecognizedIngredient =
             RecognizedIngredient(name, foodKey, grams, confidence, per100g)
+
+        /**
+         * The ingredient for a food the model did not report. [grams] stays the catalogue portion
+         * because the portion question is built from it, but the ingredient itself claims nothing.
+         */
+        fun toUnknownAmountIngredient(): RecognizedIngredient =
+            RecognizedIngredient(name, foodKey, UNKNOWN_AMOUNT_GRAMS, Confidence.LOW, per100g)
     }
 
     /** Groups that are never anchors: implicit fats and catch-alls the user did not really name. */

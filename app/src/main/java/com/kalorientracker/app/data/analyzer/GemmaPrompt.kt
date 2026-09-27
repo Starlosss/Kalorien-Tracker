@@ -132,10 +132,12 @@ object GemmaPrompt {
         if (merged.isEmpty()) return null
 
         // Whatever the user named themselves is never dropped, even when the model overlooked it.
+        // Its weight, though, is only carried over when the user stated it; otherwise nobody knows
+        // it and the ingredient waits at a token gram until the portion question is answered.
         val anchors = DescriptionAnchors.of(description)
         val missing = anchors.filterNot { DescriptionAnchors.covered(it, merged.values.toList()) }
         val ingredients = merged.values.toList() +
-            missing.map { it.toIngredient(if (it.statedGrams) Confidence.HIGH else Confidence.LOW) }
+            missing.map { if (it.statedGrams) it.toIngredient(Confidence.HIGH) else it.toUnknownAmountIngredient() }
 
         val modelQuestions = if (!allowQuestions) emptyList() else (root["rueckfragen"] as? JsonArray).orEmpty()
             .mapNotNull { element ->
@@ -158,6 +160,10 @@ object GemmaPrompt {
             add("Erkannt mit Gemma auf deinem Gerät. Bitte die Mengen kurz prüfen.")
             if (missing.isNotEmpty()) {
                 add("Auf dem Foto nicht erkannt, aus deiner Beschreibung ergänzt: ${missing.joinToString { it.shortName }}.")
+            }
+            val openAmount = missing.filterNot { it.statedGrams }
+            if (openAmount.isNotEmpty()) {
+                add("Die Menge steht dafür noch nicht fest und zählt bis dahin nicht mit: ${openAmount.joinToString { it.shortName }}.")
             }
             if (photoCount >= 2) add("$photoCount Fotos wurden gemeinsam ausgewertet.")
             if (usedCorrections.isNotEmpty()) add("Deine üblichen Portionen sind eingerechnet: ${usedCorrections.joinToString()}.")
