@@ -151,11 +151,23 @@ class BackupManager @Inject constructor(
             meal.copy(photoPaths = joinPaths(restored))
         }
 
+        // A foodId in the file only means anything for the foods the file itself carries. The
+        // curated and catalogue rows are rebuilt below with fresh ids, and clearAllTables resets
+        // the autoincrement counter, so every other foodId is not merely dangling: the id will be
+        // handed out again and the ingredient would then point at an unrelated food. These are
+        // cut inside the same transaction that inserts them, before anything can mint a new id,
+        // and offered back by name once the curated table is in place.
+        val restoredFoodIds = data.foods.mapTo(HashSet()) { it.id }
+        val orphanedIngredientIds = data.ingredients
+            .filter { it.foodId != null && it.foodId !in restoredFoodIds }
+            .map { it.id }
+
         db.clearAllTables()
         db.withTransaction {
             db.foodDao().insertAll(data.foods)
             db.mealDao().insertMeals(meals)
             db.mealDao().insertIngredients(data.ingredients)
+            db.mealDao().clearFoodLinks(orphanedIngredientIds)
             db.weightDao().insertAll(data.weights)
             data.profile?.let { db.profileDao().upsertProfile(it) }
             db.profileDao().insertActivities(data.activities)
@@ -166,6 +178,12 @@ class BackupManager @Inject constructor(
             db.learningDao().insertAll(data.corrections)
         }
         seeder.seedIfNeeded()
+        // The curated table is back, so the links cut above can be offered a food of the same
+        // name. Anything still unmatched stays unlinked, which costs the remembered portion for
+        // that food and nothing else. Catalogue products are re-imported in the background and
+        // may not be here yet; an ingredient that came from one keeps no link, deliberately,
+        // rather than waiting on an import that has no deadline.
+        db.mealDao().relinkIngredientsByName(orphanedIngredientIds)
         // Same reason as in deleteAllData. A file written on a device whose catalogue import had
         // not finished yet carries only part of the barcode rows, and the unique index on
         // `barcode` means the re-import fills the gaps without touching what the file restored.

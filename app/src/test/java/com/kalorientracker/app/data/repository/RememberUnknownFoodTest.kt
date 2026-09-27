@@ -85,6 +85,8 @@ private class UnusedMealDao : MealDao() {
     override fun observeTrackedDays(): Flow<List<Long>> = error("not used")
     override suspend fun firstDay(): Long? = error("not used")
     override suspend fun lastGramsForFood(foodId: Long): Double? = error("not used")
+    override suspend fun clearFoodLinksChunk(ingredientIds: List<Long>) = error("not used")
+    override suspend fun relinkIngredientsByNameChunk(ingredientIds: List<Long>) = error("not used")
     override suspend fun allMeals() = error("not used")
     override suspend fun allIngredients() = error("not used")
     override suspend fun setPhotoPaths(mealId: Long, paths: String) = error("not used")
@@ -134,7 +136,7 @@ private class FakeFoodDao(private val items: MutableList<FoodEntity>) : FoodDao 
     override suspend fun allUserFoods(): List<FoodEntity> =
         items.filter { it.source != FoodSource.BASE_DB.name && it.source != FoodSource.CATALOG.name }
 
-    override suspend fun relabelAsCatalog(barcodes: List<String>) {
+    override suspend fun relabelChunk(barcodes: List<String>) {
         items.replaceAll { item ->
             if (item.source == FoodSource.ONLINE_CACHED.name && item.barcode in barcodes) {
                 item.copy(source = FoodSource.CATALOG.name)

@@ -114,6 +114,104 @@ class DatabaseTest {
         assertEquals(150.0, db.mealDao().lastGramsForFood(id)!!, 0.0)
     }
 
+    private fun food(name: String, source: FoodSource, kcal: Double = 100.0) = FoodEntity(
+        name = name,
+        kcal = kcal,
+        protein = 0.0,
+        carbs = 0.0,
+        fat = 0.0,
+        fiber = 0.0,
+        sugar = 0.0,
+        saturatedFat = 0.0,
+        salt = 0.0,
+        source = source.name,
+    )
+
+    /**
+     * The restore bug in full. A backup file stores `foodId` values that only mean anything
+     * together with the foods the same file carries. Everything else in `foods` is rebuilt from
+     * scratch, and `clearAllTables` resets the autoincrement counter, so an id that used to point
+     * at a curated or catalogue row is handed out again to a completely different food. The
+     * ingredient then quietly shows the wrong food behind it and offers the wrong remembered
+     * portion.
+     *
+     * Here the ingredient "Haferflocken" arrives with foodId 40.701 from the old catalogue, and
+     * id 40.701 is then handed to "Zucker". The link has to end up on the Haferflocken row.
+     */
+    @Test
+    fun restoredIngredientNeverPointsAtAStrangersFood() = runTest {
+        val foods = db.foodDao()
+        val meals = db.mealDao()
+        val staleId = 40_701L
+
+        // Restored from the file: the ingredient still carries the id from the old install.
+        val mealId = meals.insertMeal(meal(1, 1))
+        meals.insertIngredients(
+            listOf(ingredient("Haferflocken", 60.0, 370.0).copy(mealId = mealId, foodId = staleId)),
+        )
+        val ingredientId = meals.allIngredients().single().id
+
+        // Cut before anything new is minted, exactly as the restore does it.
+        meals.clearFoodLinks(listOf(ingredientId))
+
+        // The counter hands 40.701 to an unrelated food, and the real Haferflocken row is curated.
+        foods.insert(food("Zucker", FoodSource.BASE_DB).copy(id = staleId))
+        val oatsId = foods.insert(food("Haferflocken", FoodSource.BASE_DB, kcal = 370.0))
+
+        meals.relinkIngredientsByName(listOf(ingredientId))
+
+        val restored = meals.allIngredients().single()
+        assertEquals("the link must follow the name, not the old id", oatsId, restored.foodId)
+    }
+
+    /** Nothing of that name came back, so the ingredient stays unlinked rather than guessing. */
+    @Test
+    fun anIngredientWithNoMatchingFoodStaysUnlinked() = runTest {
+        val meals = db.mealDao()
+        val mealId = meals.insertMeal(meal(1, 1))
+        meals.insertIngredients(
+            listOf(ingredient("Selbstgebackenes Brot", 80.0, 250.0).copy(mealId = mealId, foodId = 4711L)),
+        )
+        val ingredientId = meals.allIngredients().single().id
+
+        meals.clearFoodLinks(listOf(ingredientId))
+        db.foodDao().insert(food("Brot", FoodSource.BASE_DB))
+        meals.relinkIngredientsByName(listOf(ingredientId))
+
+        assertNull(meals.allIngredients().single().foodId)
+    }
+
+    /**
+     * `byName` feeds `bestMatch`, which takes the single top row. With two rows of the same name
+     * and no tiebreaker the answer depended on whatever order SQLite produced, so the same
+     * database could resolve the same ingredient to different foods on different runs.
+     */
+    @Test
+    fun byNamePrefersTheCuratedRowAndIsOtherwiseStable() = runTest {
+        val foods = db.foodDao()
+        val branded = foods.insert(food("Milch", FoodSource.CATALOG, kcal = 47.0))
+        val own = foods.insert(food("Milch", FoodSource.USER_ADDED, kcal = 48.0))
+        val curated = foods.insert(food("Milch", FoodSource.BASE_DB, kcal = 49.0))
+
+        assertEquals(curated, foods.byName("milch")!!.id)
+        assertEquals("the same query must keep answering the same", curated, foods.byName("Milch")!!.id)
+
+        // Search ranks by the same tiers: curated first, the user's own data next, the bundled
+        // branded bulk last, so the 39.960 branded rows cannot bury the 725 curated ones.
+        assertEquals(listOf(curated, own, branded), foods.search("Milch", 10).map { it.id })
+    }
+
+    /** Two rows that tie on every other key are separated by the row id, in both lookups. */
+    @Test
+    fun aTieIsBrokenByTheRowIdNotByChance() = runTest {
+        val foods = db.foodDao()
+        val first = foods.insert(food("Quark", FoodSource.USER_ADDED, kcal = 67.0))
+        foods.insert(food("Quark", FoodSource.AI_ESTIMATED, kcal = 70.0))
+
+        assertEquals(first, foods.byName("Quark")!!.id)
+        assertEquals(first, foods.search("Quark", 10).first().id)
+    }
+
     @Test
     fun seederLoadsBundledBaseDatabaseOnce() = runTest {
         val seeder = FoodSeeder(context, db.foodDao(), Json { ignoreUnknownKeys = true })

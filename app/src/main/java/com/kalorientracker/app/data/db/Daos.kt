@@ -12,27 +12,38 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface FoodDao {
     /**
-     * Ranks a hit by three keys. First a name that starts with the query, then everything except
-     * the bundled branded catalogue, then the shortest name.
+     * Ranks a hit by four keys: a name that starts with the query, then the source tier, then the
+     * shortest name, then the row id.
      *
-     * The middle key matters because the catalogue holds about 39.960 branded rows against 725
-     * curated ones: without it a search for "Milch" returns seven dairy brands whose name is
-     * literally "Milch" and pushes the curated "Milch 1,5 %" off the first screen, and
+     * The source tier is the shared rule, and [byName] and `relinkIngredientsByName` sort by the
+     * same one so every lookup agrees about which row is the best match for a name:
+     *
+     * | tier | source | why |
+     * |---|---|---|
+     * | 0 | `BASE_DB` | curated, complete secondary nutrients |
+     * | 1 | `USER_ADDED`, `AI_ESTIMATED`, `ONLINE_CACHED` | the user's own data |
+     * | 2 | `CATALOG` | the bundled branded bulk table |
+     *
+     * Tier 2 matters because the catalogue holds about 39.960 branded rows against 725 curated
+     * ones: without it a search for "Milch" returns seven dairy brands whose name is literally
+     * "Milch" and pushes the curated "Milch 1,5 %" off the first screen, and
      * `FoodRepository.bestMatch`, which takes the single top hit, resolves an analyzer ingredient
-     * to a branded row that often carries no fibre, sugar, saturated fat or salt.
+     * to a branded row that often carries no fibre, sugar, saturated fat or salt. Only those two
+     * ends are named, so a source added later lands in tier 1 with the user's own data rather
+     * than silently in the bulk bucket.
      *
-     * It demotes one source rather than promoting a list of them, so a source added later is
-     * ranked with the user's own data by default instead of silently landing in the bulk bucket.
-     * [byName] sorts by the same rule on purpose: the two lookups must agree about which row is
-     * the best match for a name.
+     * The trailing `id` is what makes this a *total* order. Without it two rows that tie on every
+     * other key come back in whatever order SQLite happens to produce, so the same database could
+     * answer the same lookup differently on different runs.
      */
     @Query(
         """
         SELECT * FROM foods
         WHERE name LIKE '%' || :query || '%' OR brand LIKE '%' || :query || '%' OR barcode = :query
         ORDER BY CASE WHEN name LIKE :query || '%' THEN 0 ELSE 1 END,
-                 CASE WHEN source = 'CATALOG' THEN 1 ELSE 0 END,
-                 length(name)
+                 CASE source WHEN 'BASE_DB' THEN 0 WHEN 'CATALOG' THEN 2 ELSE 1 END,
+                 length(name),
+                 id
         LIMIT :limit
         """,
     )
@@ -44,11 +55,12 @@ interface FoodDao {
     @Query("SELECT * FROM foods WHERE id = :id")
     suspend fun byId(id: Long): FoodEntity?
 
-    /** Same preference as [search]: anything before a row from the bundled branded catalogue. */
+    /** The same source tier and the same `id` tiebreaker as [search]; see its table. */
     @Query(
         """
         SELECT * FROM foods WHERE name = :name COLLATE NOCASE
-        ORDER BY CASE WHEN source = 'CATALOG' THEN 1 ELSE 0 END
+        ORDER BY CASE source WHEN 'BASE_DB' THEN 0 WHEN 'CATALOG' THEN 2 ELSE 1 END,
+                 id
         LIMIT 1
         """,
     )
@@ -96,9 +108,17 @@ interface FoodDao {
      * name it shared with genuine online hits. Matched by barcode against the bundled asset, so
      * a product the user really did fetch online keeps its label and its values; nothing is
      * deleted.
+     *
+     * Room binds one variable per barcode and the importer hands over a whole chunk at a time,
+     * which is far more than a statement may bind on API 26 to 30; see [SQLITE_MAX_BIND_ARGS].
+     * The split happens here rather than at the call site so no caller can forget it.
      */
+    suspend fun relabelAsCatalog(barcodes: List<String>) =
+        forEachBindBatch(barcodes) { relabelChunk(it) }
+
+    /** One statement's worth of [relabelAsCatalog]. Call that, not this. */
     @Query("UPDATE foods SET source = 'CATALOG' WHERE source = 'ONLINE_CACHED' AND barcode IN (:barcodes)")
-    suspend fun relabelAsCatalog(barcodes: List<String>)
+    suspend fun relabelChunk(barcodes: List<String>)
 }
 
 @Dao
@@ -179,6 +199,52 @@ abstract class MealDao {
 
     @Query("SELECT grams FROM meal_ingredients WHERE foodId = :foodId ORDER BY id DESC LIMIT 1")
     abstract suspend fun lastGramsForFood(foodId: Long): Double?
+
+    /**
+     * Drops the food link of the named ingredients. Used by a restore before anything mints new
+     * food ids, because a `foodId` from the backup file is only meaningful for the foods the file
+     * itself restored: `clearAllTables` resets the autoincrement counter, so an id that pointed
+     * at a curated or catalogue food will later be handed to a *different* food. A dangling id
+     * costs a re-pick, an id pointing at the wrong food is a correctness bug, so these are cut
+     * first and offered back by name afterwards.
+     *
+     * One bound variable per id, so the list is split here; see [SQLITE_MAX_BIND_ARGS].
+     */
+    suspend fun clearFoodLinks(ingredientIds: List<Long>) =
+        forEachBindBatch(ingredientIds) { clearFoodLinksChunk(it) }
+
+    /** One statement's worth of [clearFoodLinks]. Call that, not this. */
+    @Query("UPDATE meal_ingredients SET foodId = NULL WHERE id IN (:ingredientIds)")
+    abstract suspend fun clearFoodLinksChunk(ingredientIds: List<Long>)
+
+    /**
+     * Re-points the named ingredients at the food that now carries their own name, or leaves them
+     * unlinked when nothing matches. Ranked by the same source tier and `id` tiebreaker as
+     * [FoodDao.search], so the answer does not depend on row order.
+     *
+     * It can only ever choose a food whose name equals the name stored on the ingredient, so it
+     * cannot produce the silent mismatch that a stale id can.
+     *
+     * One bound variable per id, so the list is split here; see [SQLITE_MAX_BIND_ARGS].
+     */
+    suspend fun relinkIngredientsByName(ingredientIds: List<Long>) =
+        forEachBindBatch(ingredientIds) { relinkIngredientsByNameChunk(it) }
+
+    /** One statement's worth of [relinkIngredientsByName]. Call that, not this. */
+    @Query(
+        """
+        UPDATE meal_ingredients
+        SET foodId = (
+            SELECT f.id FROM foods f
+            WHERE f.name = meal_ingredients.name COLLATE NOCASE
+            ORDER BY CASE f.source WHEN 'BASE_DB' THEN 0 WHEN 'CATALOG' THEN 2 ELSE 1 END,
+                     f.id
+            LIMIT 1
+        )
+        WHERE id IN (:ingredientIds)
+        """,
+    )
+    abstract suspend fun relinkIngredientsByNameChunk(ingredientIds: List<Long>)
 
     @Query("SELECT * FROM meals")
     abstract suspend fun allMeals(): List<MealEntity>

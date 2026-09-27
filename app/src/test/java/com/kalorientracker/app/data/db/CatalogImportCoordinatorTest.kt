@@ -118,6 +118,45 @@ class CatalogImportCoordinatorTest {
         assertEquals("the wipe must win, the mark stays clear", 0, mark)
     }
 
+    /**
+     * The wipe empties the table and only then waits for the lock, which a running import can
+     * hold for about a chunk. If the process dies in that wait, whatever the mark says at that
+     * moment is what the next launch believes. It has to already say "not imported", or the
+     * emptied catalogue would be treated as complete for good.
+     */
+    @Test
+    fun `the mark is already clear while the wipe is still waiting for the lock`() = runTest {
+        val coordinator = CatalogImportCoordinator()
+        var mark = VERSION
+        val importRunning = CompletableDeferred<Unit>()
+        val releaseImport = CompletableDeferred<Unit>()
+
+        // An import that has the lock and will not give it up until told to.
+        val a = launch {
+            coordinator.importOnce(
+                alreadyDone = { false },
+                markDone = { mark = VERSION },
+            ) {
+                importRunning.complete(Unit)
+                releaseImport.await()
+            }
+        }
+        runCurrent()
+        assertTrue(importRunning.isCompleted)
+
+        val wipe = launch { coordinator.invalidate { mark = 0 } }
+        runCurrent()
+
+        // This is the crash window: the wipe is parked on the lock and has changed nothing else.
+        assertEquals("a process death here must not leave a full catalogue claimed", 0, mark)
+
+        releaseImport.complete(Unit)
+        runCurrent()
+        a.join()
+        wipe.join()
+        assertEquals("and the mark still ends up clear", 0, mark)
+    }
+
     @Test
     fun `an import is skipped when the mark is already set`() = runTest {
         val coordinator = CatalogImportCoordinator()

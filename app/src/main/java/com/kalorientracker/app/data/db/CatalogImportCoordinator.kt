@@ -69,8 +69,17 @@ class CatalogImportCoordinator {
     /**
      * Tells a running import to stop, waits until it actually has, and then runs [clearMark].
      * Once this returns, no import that was already running can set the mark any more.
+     *
+     * [clearMark] is called twice on purpose. The wait for the lock can last as long as a chunk
+     * takes, about one and a half seconds, and the caller has just emptied the table. If the
+     * process dies inside that wait, a mark cleared only afterwards would still be set over an
+     * empty catalogue and no later launch would ever refill it. Clearing once up front means the
+     * worst a death in the window can leave behind is a cleared mark, which costs one needless
+     * re-import. The second call is still the authoritative one: it is the one an import racing
+     * to write the mark cannot get in front of.
      */
     suspend fun invalidate(clearMark: () -> Unit) {
+        clearMark()
         generation.incrementAndGet()
         mutex.withLock { clearMark() }
     }
