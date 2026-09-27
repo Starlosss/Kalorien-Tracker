@@ -15,33 +15,39 @@ interface FoodDao {
      * Ranks a hit by four keys: a name that starts with the query, then the source tier, then the
      * shortest name, then the row id.
      *
-     * The source tier is the shared rule, and [byName] and `relinkIngredientsByName` sort by the
-     * same one so every lookup agrees about which row is the best match for a name:
+     * The source tier is the shared rule. [byName] and [relinkIngredientsByNameChunk] repeat it
+     * verbatim, because Room has no way to share a SQL fragment, and every lookup has to agree
+     * about which row is the best match for a name:
      *
      * | tier | source | why |
      * |---|---|---|
-     * | 0 | `BASE_DB` | curated, complete secondary nutrients |
-     * | 1 | `USER_ADDED`, `AI_ESTIMATED`, `ONLINE_CACHED` | the user's own data |
-     * | 2 | `CATALOG` | the bundled branded bulk table |
+     * | 0 | `USER_ADDED` | the person typed this in themselves, about their own food |
+     * | 1 | `BASE_DB` | curated, and the only rows with complete secondary nutrients |
+     * | 2 | `AI_ESTIMATED`, `ONLINE_CACHED` | picked up automatically, an estimate or one brand |
+     * | 3 | `CATALOG` | the bundled branded bulk table |
      *
-     * Tier 2 matters because the catalogue holds about 39.960 branded rows against 725 curated
-     * ones: without it a search for "Milch" returns seven dairy brands whose name is literally
-     * "Milch" and pushes the curated "Milch 1,5 %" off the first screen, and
-     * `FoodRepository.bestMatch`, which takes the single top hit, resolves an analyzer ingredient
-     * to a branded row that often carries no fibre, sugar, saturated fat or salt. Only those two
-     * ends are named, so a source added later lands in tier 1 with the user's own data rather
-     * than silently in the bulk bucket.
+     * The bottom tier is the one that made this necessary: the catalogue holds about 39.960
+     * branded rows against 725 curated ones, so without it a search for "Milch" returns seven
+     * dairy brands whose name is literally "Milch" and pushes the curated "Milch 1,5 %" off the
+     * first screen, and `FoodRepository.bestMatch`, which takes the single top hit, resolves an
+     * analyzer ingredient to a branded row that often carries no fibre, sugar, saturated fat or
+     * salt. The top tier is the other end of the same argument: a row the person created on
+     * purpose says more about what they eat than any table we shipped, so it must not be buried
+     * under curated rows with similar names either.
+     *
+     * A source added later has to be placed here deliberately; the `ELSE` bucket is the automatic
+     * middle, not the bulk one, so forgetting is the cheap mistake rather than the expensive one.
      *
      * The trailing `id` is what makes this a *total* order. Without it two rows that tie on every
      * other key come back in whatever order SQLite happens to produce, so the same database could
-     * answer the same lookup differently on different runs.
+     * answer the same lookup differently once a query plan changes.
      */
     @Query(
         """
         SELECT * FROM foods
         WHERE name LIKE '%' || :query || '%' OR brand LIKE '%' || :query || '%' OR barcode = :query
         ORDER BY CASE WHEN name LIKE :query || '%' THEN 0 ELSE 1 END,
-                 CASE source WHEN 'BASE_DB' THEN 0 WHEN 'CATALOG' THEN 2 ELSE 1 END,
+                 CASE source WHEN 'USER_ADDED' THEN 0 WHEN 'BASE_DB' THEN 1 WHEN 'CATALOG' THEN 3 ELSE 2 END,
                  length(name),
                  id
         LIMIT :limit
@@ -59,7 +65,7 @@ interface FoodDao {
     @Query(
         """
         SELECT * FROM foods WHERE name = :name COLLATE NOCASE
-        ORDER BY CASE source WHEN 'BASE_DB' THEN 0 WHEN 'CATALOG' THEN 2 ELSE 1 END,
+        ORDER BY CASE source WHEN 'USER_ADDED' THEN 0 WHEN 'BASE_DB' THEN 1 WHEN 'CATALOG' THEN 3 ELSE 2 END,
                  id
         LIMIT 1
         """,
@@ -202,11 +208,15 @@ abstract class MealDao {
 
     /**
      * Drops the food link of the named ingredients. Used by a restore before anything mints new
-     * food ids, because a `foodId` from the backup file is only meaningful for the foods the file
-     * itself restored: `clearAllTables` resets the autoincrement counter, so an id that pointed
-     * at a curated or catalogue food will later be handed to a *different* food. A dangling id
-     * costs a re-pick, an id pointing at the wrong food is a correctness bug, so these are cut
-     * first and offered back by name afterwards.
+     * food ids, because a `foodId` from the backup file is only meaningful together with the
+     * foods the file itself restored. Everything else in `foods` is rebuilt from scratch, and
+     * nothing ties the rebuilt rows to the numbers they carried on the machine that wrote the
+     * file: seeding and the catalogue import hand out whatever the autoincrement counter offers
+     * at that moment. `clearAllTables` does not reset that counter, which is what makes this
+     * concrete rather than theoretical: on the same device the counter keeps its high-water mark,
+     * so re-seeding after a wipe hands the old catalogue's numbers straight to fresh curated
+     * rows. A dangling id costs a re-pick, an id pointing at the wrong food is a correctness bug,
+     * so these are cut first and offered back by name afterwards.
      *
      * One bound variable per id, so the list is split here; see [SQLITE_MAX_BIND_ARGS].
      */
@@ -237,7 +247,7 @@ abstract class MealDao {
         SET foodId = (
             SELECT f.id FROM foods f
             WHERE f.name = meal_ingredients.name COLLATE NOCASE
-            ORDER BY CASE f.source WHEN 'BASE_DB' THEN 0 WHEN 'CATALOG' THEN 2 ELSE 1 END,
+            ORDER BY CASE f.source WHEN 'USER_ADDED' THEN 0 WHEN 'BASE_DB' THEN 1 WHEN 'CATALOG' THEN 3 ELSE 2 END,
                      f.id
             LIMIT 1
         )

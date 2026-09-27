@@ -130,13 +130,16 @@ class DatabaseTest {
     /**
      * The restore bug in full. A backup file stores `foodId` values that only mean anything
      * together with the foods the same file carries. Everything else in `foods` is rebuilt from
-     * scratch, and `clearAllTables` resets the autoincrement counter, so an id that used to point
-     * at a curated or catalogue row is handed out again to a completely different food. The
-     * ingredient then quietly shows the wrong food behind it and offers the wrong remembered
-     * portion.
+     * scratch and numbered by whatever the autoincrement counter offers at that moment, which has
+     * no relation to the numbering on the machine that wrote the file. `clearAllTables` leaves
+     * the counter at its high-water mark, so on the same device re-seeding after a wipe hands the
+     * old catalogue's numbers straight to fresh curated rows. The ingredient then quietly shows
+     * the wrong food behind it and offers the wrong remembered portion.
      *
      * Here the ingredient "Haferflocken" arrives with foodId 40.701 from the old catalogue, and
-     * id 40.701 is then handed to "Zucker". The link has to end up on the Haferflocken row.
+     * 40.701 is then handed to "Zucker". The link has to end up on the Haferflocken row. The id
+     * is placed explicitly so the collision happens on the first row rather than after 40.700
+     * inserts; the mechanism under test is the relink, not the counter.
      */
     @Test
     fun restoredIngredientNeverPointsAtAStrangersFood() = runTest {
@@ -186,27 +189,50 @@ class DatabaseTest {
      * and no tiebreaker the answer depended on whatever order SQLite produced, so the same
      * database could resolve the same ingredient to different foods on different runs.
      */
+    /**
+     * `byName` feeds `bestMatch`, which takes the single top row, and `search` fills the list the
+     * person scrolls. Both have to rank the same way, or the food shown at the top of the list is
+     * not the one an analyzer ingredient resolves to.
+     *
+     * The order under test, top to bottom: what the person typed in themselves, then the curated
+     * table, then anything picked up automatically, then the bundled branded bulk.
+     */
     @Test
-    fun byNamePrefersTheCuratedRowAndIsOtherwiseStable() = runTest {
+    fun bothLookupsRankTheSameSourcesTheSameWay() = runTest {
         val foods = db.foodDao()
         val branded = foods.insert(food("Milch", FoodSource.CATALOG, kcal = 47.0))
-        val own = foods.insert(food("Milch", FoodSource.USER_ADDED, kcal = 48.0))
+        val guessed = foods.insert(food("Milch", FoodSource.AI_ESTIMATED, kcal = 50.0))
         val curated = foods.insert(food("Milch", FoodSource.BASE_DB, kcal = 49.0))
+        val own = foods.insert(food("Milch", FoodSource.USER_ADDED, kcal = 48.0))
 
-        assertEquals(curated, foods.byName("milch")!!.id)
-        assertEquals("the same query must keep answering the same", curated, foods.byName("Milch")!!.id)
-
-        // Search ranks by the same tiers: curated first, the user's own data next, the bundled
-        // branded bulk last, so the 39.960 branded rows cannot bury the 725 curated ones.
-        assertEquals(listOf(curated, own, branded), foods.search("Milch", 10).map { it.id })
+        assertEquals(own, foods.byName("milch")!!.id)
+        assertEquals("the same query must keep answering the same", own, foods.byName("Milch")!!.id)
+        assertEquals(listOf(own, curated, guessed, branded), foods.search("Milch", 10).map { it.id })
     }
 
-    /** Two rows that tie on every other key are separated by the row id, in both lookups. */
+    /** Without the curated row the automatic ones still beat the bundled branded bulk. */
     @Test
-    fun aTieIsBrokenByTheRowIdNotByChance() = runTest {
+    fun theBundledBrandedTableRanksLastEvenAgainstAGuess() = runTest {
         val foods = db.foodDao()
-        val first = foods.insert(food("Quark", FoodSource.USER_ADDED, kcal = 67.0))
-        foods.insert(food("Quark", FoodSource.AI_ESTIMATED, kcal = 70.0))
+        val branded = foods.insert(food("Pizza", FoodSource.CATALOG, kcal = 250.0))
+        val guessed = foods.insert(food("Pizza", FoodSource.AI_ESTIMATED, kcal = 260.0))
+
+        assertEquals(guessed, foods.byName("Pizza")!!.id)
+        assertEquals(listOf(guessed, branded), foods.search("Pizza", 10).map { it.id })
+    }
+
+    /**
+     * Writes the tiebreaker down rather than reproducing a failure. Today both queries scan the
+     * table, so SQLite hands back tied rows in rowid order on its own and this test also passes
+     * without the `id` key. It exists so that a later index on `name`, or any other plan change
+     * that reorders a scan, has to break a test instead of silently changing which food an
+     * ingredient resolves to.
+     */
+    @Test
+    fun tiedRowsAreSeparatedByTheRowId() = runTest {
+        val foods = db.foodDao()
+        val first = foods.insert(food("Quark", FoodSource.AI_ESTIMATED, kcal = 67.0))
+        foods.insert(food("Quark", FoodSource.ONLINE_CACHED, kcal = 70.0))
 
         assertEquals(first, foods.byName("Quark")!!.id)
         assertEquals(first, foods.search("Quark", 10).first().id)

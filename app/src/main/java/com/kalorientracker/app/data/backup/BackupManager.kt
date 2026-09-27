@@ -152,15 +152,15 @@ class BackupManager @Inject constructor(
         }
 
         // A foodId in the file only means anything for the foods the file itself carries. The
-        // curated and catalogue rows are rebuilt below with fresh ids, and clearAllTables resets
-        // the autoincrement counter, so every other foodId is not merely dangling: the id will be
-        // handed out again and the ingredient would then point at an unrelated food. These are
-        // cut inside the same transaction that inserts them, before anything can mint a new id,
-        // and offered back by name once the curated table is in place.
-        val restoredFoodIds = data.foods.mapTo(HashSet()) { it.id }
-        val orphanedIngredientIds = data.ingredients
-            .filter { it.foodId != null && it.foodId !in restoredFoodIds }
-            .map { it.id }
+        // curated and catalogue rows are rebuilt below and get whatever numbers the autoincrement
+        // counter offers then, which has nothing to do with the numbers they had on the machine
+        // that wrote the file. So every other foodId is not merely dangling: that number will be
+        // handed out again and the ingredient would then point at an unrelated food. Measured on
+        // the same device, where clearAllTables leaves the counter at its high-water mark: a
+        // catalogue id of 40.701 from the file lands on a curated row re-seeded afterwards.
+        // These are cut inside the same transaction that inserts them, before anything can mint
+        // a new id, and offered back by name once the curated table is in place.
+        val orphanedIngredientIds = orphanedIngredientIds(data.foods, data.ingredients)
 
         db.clearAllTables()
         db.withTransaction {
@@ -245,4 +245,20 @@ class BackupManager @Inject constructor(
         private const val DATA_ENTRY = "backup.json"
         private const val PHOTO_PREFIX = "photos/"
     }
+}
+
+/**
+ * The ingredients whose `foodId` will not survive the restore: it names a food the file does not
+ * carry, so after the rebuild that number belongs to something else. See the call site for why
+ * that is worse than no link at all.
+ *
+ * An ingredient with no link is left alone, and one pointing at a food the file restores keeps
+ * its link, because [BackupManager] writes those foods back under their own ids.
+ */
+internal fun orphanedIngredientIds(
+    foods: List<FoodEntity>,
+    ingredients: List<MealIngredientEntity>,
+): List<Long> {
+    val restored = foods.mapTo(HashSet()) { it.id }
+    return ingredients.filter { it.foodId != null && it.foodId !in restored }.map { it.id }
 }
