@@ -1,10 +1,12 @@
 package com.kalorientracker.app.ui.theme
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -118,6 +120,8 @@ fun KalorienTheme(
         CompositionLocalProvider(
             LocalMotion provides MotionSettings(animationsEnabled),
             LocalHaptics provides haptics,
+            // Every clickable row answers a touch the same way instead of the flat default overlay.
+            LocalIndication provides ripple(),
             content = content,
         )
     }

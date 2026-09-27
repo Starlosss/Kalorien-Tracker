@@ -177,7 +177,7 @@ private fun MacroMini(label: String, grams: Double, color: androidx.compose.ui.g
 }
 
 @Composable
-private fun IngredientCard(
+internal fun IngredientCard(
     ingredient: DraftIngredient,
     effectiveGrams: Double,
     mealPortionIndex: Int,
@@ -212,13 +212,24 @@ private fun IngredientCard(
                 ingredient.confidence?.let { ConfidenceBadge(it) }
             }
             Column(horizontalAlignment = Alignment.End) {
-                AnimatedNumber(effectiveGrams, MaterialTheme.typography.titleMedium, format = { "ca. ${Fmt.int(it)} g" })
-                AnimatedNumber(
-                    ingredient.per100g.forGrams(effectiveGrams).kcal,
-                    MaterialTheme.typography.bodySmall,
-                    color = Palette.TextTertiary,
-                    format = { "${Fmt.int(it)} kcal" },
-                )
+                if (ingredient.amountOpen) {
+                    // The token gram on its own reads like a measurement that went wrong, so the
+                    // row says in words that the amount is still open.
+                    Text("Menge offen", style = MaterialTheme.typography.titleMedium, color = Palette.TextPrimary)
+                    Text(
+                        "zählt noch nicht mit",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Palette.TextTertiary,
+                    )
+                } else {
+                    AnimatedNumber(effectiveGrams, MaterialTheme.typography.titleMedium, format = { "ca. ${Fmt.int(it)} g" })
+                    AnimatedNumber(
+                        ingredient.per100g.forGrams(effectiveGrams).kcal,
+                        MaterialTheme.typography.bodySmall,
+                        color = Palette.TextTertiary,
+                        format = { "${Fmt.int(it)} kcal" },
+                    )
+                }
             }
         }
         if (expanded) {

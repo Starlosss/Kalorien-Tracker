@@ -52,7 +52,7 @@ object DescriptionAnchors {
          * because the portion question is built from it, but the ingredient itself claims nothing.
          */
         fun toUnknownAmountIngredient(): RecognizedIngredient =
-            RecognizedIngredient(name, foodKey, UNKNOWN_AMOUNT_GRAMS, Confidence.LOW, per100g)
+            RecognizedIngredient(name, foodKey, UNKNOWN_AMOUNT_GRAMS, Confidence.LOW, per100g, amountOpen = true)
     }
 
     /** Groups that are never anchors: implicit fats and catch-alls the user did not really name. */
@@ -138,7 +138,7 @@ object DescriptionAnchors {
             val index = result.indexOfFirst { it.foodKey == key }
             when {
                 grams == null -> if (index >= 0) result.removeAt(index)
-                index >= 0 -> result[index] = result[index].copy(estimatedGrams = grams, confidence = Confidence.HIGH)
+                index >= 0 -> result[index] = result[index].copy(estimatedGrams = grams, confidence = Confidence.HIGH, amountOpen = false)
                 else -> anchors.firstOrNull { it.foodKey == key }
                     ?.let { result += it.copy(grams = grams).toIngredient(Confidence.HIGH) }
             }

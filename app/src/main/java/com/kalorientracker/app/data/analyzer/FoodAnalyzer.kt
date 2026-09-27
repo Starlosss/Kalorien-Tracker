@@ -30,6 +30,11 @@ data class RecognizedIngredient(
     val confidence: Confidence,
     /** Analyzer's own nutrient estimate, used when no database match exists. */
     val per100g: Nutrients,
+    /**
+     * True when [estimatedGrams] is only the placeholder for a food nobody has weighed yet.
+     * The screen says so in the row instead of showing the token gram as a measured amount.
+     */
+    val amountOpen: Boolean = false,
 )
 
 data class FollowUpQuestion(

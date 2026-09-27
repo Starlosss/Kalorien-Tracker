@@ -14,6 +14,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
+/** One radius for every card that sits in a screen's content column. */
+val CardCornerRadius = 22.dp
+
 /**
  * The only glass surface in the app: faint translucency, a hairline light edge and a soft top
  * reflection. Use it for the one or two focal elements of a screen, not for every card.
@@ -57,7 +60,7 @@ fun PlainCard(
     contentPadding: Dp = 18.dp,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    val shape = RoundedCornerShape(22.dp)
+    val shape = RoundedCornerShape(CardCornerRadius)
     Box(
         modifier = modifier
             .clip(shape)

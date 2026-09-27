@@ -62,6 +62,8 @@ data class DraftIngredient(
     val estimatedGrams: Double? = null,
     val confidence: Confidence? = null,
     val portionIndex: Int? = PortionScale.NORMAL_INDEX,
+    /** True while [grams] is only the placeholder for an amount nobody has stated yet. */
+    val amountOpen: Boolean = false,
 )
 
 enum class AnalysisPhase { IDLE, RUNNING, QUESTIONS, DONE, FAILED }
@@ -255,6 +257,7 @@ class AddFlowViewModel @Inject constructor(
             grams = r.estimatedGrams,
             estimatedGrams = r.estimatedGrams,
             confidence = r.confidence,
+            amountOpen = r.amountOpen,
         )
     }
 
@@ -281,11 +284,11 @@ class AddFlowViewModel @Inject constructor(
     /** [effectiveGrams] is what the user sees (after the meal-wide portion factor). */
     fun setGrams(key: String, effectiveGrams: Double) {
         val factor = _state.value.portionFactor
-        updateIngredient(key) { it.copy(grams = (effectiveGrams / factor).coerceIn(0.0, 5000.0), portionIndex = null) }
+        updateIngredient(key) { it.copy(grams = (effectiveGrams / factor).coerceIn(0.0, 5000.0), portionIndex = null, amountOpen = false) }
     }
 
     fun setIngredientPortion(key: String, index: Int) =
-        updateIngredient(key) { it.copy(grams = it.baseGrams * PortionScale.factor(index), portionIndex = index) }
+        updateIngredient(key) { it.copy(grams = it.baseGrams * PortionScale.factor(index), portionIndex = index, amountOpen = false) }
 
     fun rename(key: String, name: String) = updateIngredient(key) { it.copy(name = name.take(60)) }
 

@@ -71,6 +71,9 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 
+/** The screen's side margin. The chip row keeps it itself so its chips can scroll past the edge. */
+private val SideMargin = 20.dp
+
 private val rangeSegments = listOf(
     StatsRange.WEEK to "7T",
     StatsRange.MONTH to "1M",
@@ -92,14 +95,20 @@ fun StatisticsScreen(
     val selection = state.selection
     val multiple = state.charts.size > 1
 
+    val sideMargin = Modifier.padding(horizontal = SideMargin)
+
     LazyColumn(
         Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 32.dp),
+        contentPadding = PaddingValues(bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
-        item { ScreenHeader(title = "Statistik", onSettings = onOpenSettings) }
+        item { ScreenHeader(title = "Statistik", onSettings = onOpenSettings, modifier = sideMargin) }
         item {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Full width so the chips run off the screen edge instead of being cropped by the margin.
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = SideMargin),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 items(Metric.entries) { metric ->
                     SelectChip(
                         metric.label,
@@ -112,6 +121,7 @@ fun StatisticsScreen(
         }
         item {
             Hero(
+                modifier = sideMargin,
                 metric = selection.metrics.first(),
                 summary = state.summary,
                 targetKcal = state.targets?.targetKcal,
@@ -125,7 +135,7 @@ fun StatisticsScreen(
             )
         }
         item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(sideMargin, verticalAlignment = Alignment.CenterVertically) {
                 RangeSegments(
                     selected = selection.range,
                     onSelect = { range ->
@@ -167,11 +177,11 @@ fun StatisticsScreen(
                     null
                 },
                 format = { if (chart.metric == Metric.WEIGHT) Fmt.one(it) else Fmt.int(it) },
-                modifier = Modifier.animateItem(),
+                modifier = Modifier.padding(horizontal = SideMargin).animateItem(),
             )
         }
         state.summary?.let { summary ->
-            item { Details(summary, state.streak, state.targets?.targetKcal, state.targetWeight) }
+            item { Details(summary, state.streak, state.targets?.targetKcal, state.targetWeight, sideMargin) }
         }
     }
 
@@ -215,8 +225,9 @@ private fun Hero(
     targetFor: (Metric) -> Double?,
     targetWeight: Double?,
     customRange: String?,
+    modifier: Modifier = Modifier,
 ) {
-    Column {
+    Column(modifier) {
         if (metric == Metric.WEIGHT) {
             val end = summary?.weightEnd
             SectionLabel(customRange ?: "Gewicht")
@@ -299,8 +310,8 @@ private fun ChartTypeToggle(type: ChartType, onToggle: () -> Unit) {
 
 /** Everything secondary in one quiet list instead of several cards. */
 @Composable
-private fun Details(summary: PeriodSummary, streak: Int, targetKcal: Int?, targetWeight: Double?) {
-    Column {
+private fun Details(summary: PeriodSummary, streak: Int, targetKcal: Int?, targetWeight: Double?, modifier: Modifier = Modifier) {
+    Column(modifier) {
         HorizontalDivider(color = Palette.Outline.copy(alpha = 0.5f))
         Spacer(Modifier.height(12.dp))
         if (summary.trackedDays > 0) {

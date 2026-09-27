@@ -66,6 +66,7 @@ import com.kalorientracker.app.ui.common.ScreenHeader
 import com.kalorientracker.app.ui.common.SecondaryButton
 import com.kalorientracker.app.ui.common.SectionLabel
 import com.kalorientracker.app.ui.common.ToggleRow
+import com.kalorientracker.app.ui.theme.CardCornerRadius
 import com.kalorientracker.app.ui.theme.GlassCard
 import com.kalorientracker.app.ui.theme.HapticEvent
 import com.kalorientracker.app.ui.theme.LocalHaptics
@@ -157,9 +158,11 @@ fun TodayScreen(
         }
         if (state.meals.isEmpty() && !state.loading) {
             item {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    EmptyHint("Noch nichts eingetragen.")
-                    PrimaryButton("Essen hinzufügen", onAdd, icon = Icons.Outlined.Add)
+                PlainCard(Modifier.fillMaxWidth()) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                        EmptyHint("Noch nichts eingetragen.")
+                        PrimaryButton("Essen hinzufügen", onAdd, icon = Icons.Outlined.Add)
+                    }
                 }
             }
         }
@@ -187,7 +190,7 @@ private fun StreakChip(days: Int) {
 @Composable
 private fun CalorieHero(totals: Nutrients, targets: GoalTargets?) {
     val target = targets?.targetKcal?.toDouble() ?: 0.0
-    GlassCard(Modifier.fillMaxWidth()) {
+    GlassCard(Modifier.fillMaxWidth(), cornerRadius = CardCornerRadius) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             CalorieRing(consumed = totals.kcal, target = target) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
