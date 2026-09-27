@@ -110,7 +110,7 @@ private class FakeFoodDao(private val items: MutableList<FoodEntity>) : FoodDao 
 
     override suspend fun byName(name: String): FoodEntity? =
         items.filter { it.name.equals(name, ignoreCase = true) }
-            .sortedByDescending { it.source == FoodSource.BASE_DB.name }
+            .sortedBy { it.source == FoodSource.CATALOG.name }
             .firstOrNull()
 
     override suspend fun insert(food: FoodEntity): Long {
@@ -130,6 +130,19 @@ private class FakeFoodDao(private val items: MutableList<FoodEntity>) : FoodDao 
     }
 
     override suspend fun countBySource(source: String): Int = items.count { it.source == source }
+
+    override suspend fun allUserFoods(): List<FoodEntity> =
+        items.filter { it.source != FoodSource.BASE_DB.name && it.source != FoodSource.CATALOG.name }
+
+    override suspend fun relabelAsCatalog(barcodes: List<String>) {
+        items.replaceAll { item ->
+            if (item.source == FoodSource.ONLINE_CACHED.name && item.barcode in barcodes) {
+                item.copy(source = FoodSource.CATALOG.name)
+            } else {
+                item
+            }
+        }
+    }
 
     override fun observeFrequent(limit: Int): Flow<List<FoodEntity>> = flowOf(emptyList())
 

@@ -11,8 +11,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -24,13 +22,16 @@ import javax.inject.Singleton
  * flag is only written after the last chunk, an import interrupted midway is not resumed from a
  * byte offset: the next launch restarts and re-parses the whole file from row one. That is a full
  * restart, not a partial skip, and it stays cheap here (about 2 seconds for ~40.000 rows).
+ *
+ * A wipe that lands in the middle of an import is handled by [CatalogImportCoordinator], which
+ * documents the interleaving it rules out.
  */
 @Singleton
 class ProductCatalogImporter @Inject constructor(
     @ApplicationContext private val context: Context,
     private val foodDao: FoodDao,
 ) {
-    private val mutex = Mutex()
+    private val coordinator = CatalogImportCoordinator()
     private val importScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /**
@@ -43,17 +44,18 @@ class ProductCatalogImporter @Inject constructor(
         private set
 
     suspend fun importIfNeeded() = withContext(Dispatchers.IO) {
-        mutex.withLock {
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            if (prefs.getInt(KEY_VERSION, 0) >= CATALOG_VERSION) {
-                isImported = true
-                return@withLock
-            }
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val startedAt = System.currentTimeMillis()
+        var accepted = 0
+        var rejected = 0
 
-            val startedAt = System.currentTimeMillis()
-            var accepted = 0
-            var rejected = 0
+        val outcome = coordinator.importOnce(
+            alreadyDone = { prefs.getInt(KEY_VERSION, 0) >= CATALOG_VERSION },
+            markDone = { prefs.edit().putInt(KEY_VERSION, CATALOG_VERSION).apply() },
+        ) { stillWanted ->
             val chunk = ArrayList<FoodEntity>(CHUNK_SIZE)
+            val relabel = ArrayList<String>(CHUNK_SIZE)
+            var abandoned = false
 
             context.assets.open(ASSET).bufferedReader().useLines { lines ->
                 for (line in lines) {
@@ -64,22 +66,46 @@ class ProductCatalogImporter @Inject constructor(
                     }
                     accepted++
                     chunk.add(food.toEntity(startedAt))
+                    food.barcode?.let(relabel::add)
                     if (chunk.size >= CHUNK_SIZE) {
-                        foodDao.insertAllIgnoring(chunk)
-                        chunk.clear()
+                        if (!stillWanted()) {
+                            abandoned = true
+                            return@useLines
+                        }
+                        writeChunk(chunk, relabel)
                     }
                 }
             }
-            if (chunk.isNotEmpty()) {
-                foodDao.insertAllIgnoring(chunk)
+            if (!abandoned && chunk.isNotEmpty()) {
+                writeChunk(chunk, relabel)
             }
-
-            prefs.edit().putInt(KEY_VERSION, CATALOG_VERSION).apply()
-            isImported = true
-
-            val durationMs = System.currentTimeMillis() - startedAt
-            Log.i(TAG, "Katalogimport abgeschlossen: $accepted übernommen, $rejected verworfen, ${durationMs} ms")
         }
+
+        when (outcome) {
+            CatalogImportCoordinator.Outcome.ALREADY_DONE -> isImported = true
+            CatalogImportCoordinator.Outcome.IMPORTED -> {
+                isImported = true
+                val durationMs = System.currentTimeMillis() - startedAt
+                Log.i(TAG, "Katalogimport abgeschlossen: $accepted übernommen, $rejected verworfen, ${durationMs} ms")
+            }
+            // A wipe overtook us and has already queued a fresh import, so the mark stays clear.
+            CatalogImportCoordinator.Outcome.ABANDONED -> {
+                isImported = false
+                Log.i(TAG, "Katalogimport verworfen, ein Löschen kam dazwischen: $accepted von ~39.960 Zeilen")
+            }
+        }
+    }
+
+    /**
+     * Inserts one chunk and relabels what an older build stored under `ONLINE_CACHED`. The
+     * relabel is a no-op from the second run on; it costs one indexed statement per chunk and
+     * saves a Room migration, since `source` is a plain text column with a tolerant mapping.
+     */
+    private suspend fun writeChunk(chunk: MutableList<FoodEntity>, relabel: MutableList<String>) {
+        foodDao.insertAllIgnoring(chunk)
+        if (relabel.isNotEmpty()) foodDao.relabelAsCatalog(relabel)
+        chunk.clear()
+        relabel.clear()
     }
 
     /**
@@ -93,10 +119,15 @@ class ProductCatalogImporter @Inject constructor(
      * on the caller's. Deleting all data sends the user straight back to onboarding, which tears
      * down the calling ViewModel; on its scope the import was measured to die after about 8.000
      * of 39.960 rows and leave a silently incomplete catalogue behind.
+     *
+     * Suspends until any import that was already running has stopped and the mark is clear. That
+     * wait is what makes a second wipe during an import safe; see [CatalogImportCoordinator].
      */
-    fun restartAfterWipe() {
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().remove(KEY_VERSION).apply()
+    suspend fun restartAfterWipe() {
         isImported = false
+        coordinator.invalidate {
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().remove(KEY_VERSION).apply()
+        }
         importScope.launch { importIfNeeded() }
     }
 
@@ -105,7 +136,13 @@ class ProductCatalogImporter @Inject constructor(
         private const val ASSET = "products.csv"
         private const val PREFS_NAME = "product_catalog"
         private const val KEY_VERSION = "imported_version"
-        private const val CATALOG_VERSION = 1
+        /**
+         * 2 relabels rows that version 1 stored as `ONLINE_CACHED`, so a backup can tell them
+         * from a product the user really fetched online. Raising this re-runs the import, which
+         * is also what applies the relabel; `source` is a plain text column read through a
+         * tolerant mapping, so no Room migration is involved.
+         */
+        private const val CATALOG_VERSION = 2
         private const val CHUNK_SIZE = 2000
         private const val MIN_KCAL = 1.0
         private const val MAX_KCAL = 900.0
@@ -162,7 +199,7 @@ class ProductCatalogImporter @Inject constructor(
                     salt = fields[10].toDoubleOrNull() ?: 0.0,
                 ),
                 servingGrams = fields[11].toDoubleOrNull(),
-                source = FoodSource.ONLINE_CACHED,
+                source = FoodSource.CATALOG,
             )
         }
 

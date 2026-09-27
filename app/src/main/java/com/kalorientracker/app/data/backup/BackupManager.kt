@@ -7,11 +7,11 @@ import com.kalorientracker.app.data.db.ActivityEntity
 import com.kalorientracker.app.data.db.AppDatabase
 import com.kalorientracker.app.data.db.FoodEntity
 import com.kalorientracker.app.data.db.FoodSeeder
-import com.kalorientracker.app.data.db.ProductCatalogImporter
 import com.kalorientracker.app.data.db.GoalTargetsEntity
 import com.kalorientracker.app.data.db.LearningCorrectionEntity
 import com.kalorientracker.app.data.db.MealEntity
 import com.kalorientracker.app.data.db.MealIngredientEntity
+import com.kalorientracker.app.data.db.ProductCatalogImporter
 import com.kalorientracker.app.data.db.UserProfileEntity
 import com.kalorientracker.app.data.db.WeightEntryEntity
 import com.kalorientracker.app.data.db.WorkoutExerciseEntity
@@ -202,7 +202,7 @@ class BackupManager @Inject constructor(
         val s = settings.current()
         return BackupData(
             exportedAt = System.currentTimeMillis(),
-            foods = db.foodDao().all(),
+            foods = db.foodDao().allUserFoods(),
             meals = db.mealDao().allMeals(),
             ingredients = db.mealDao().allIngredients(),
             weights = db.weightDao().all(),

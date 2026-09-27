@@ -12,20 +12,26 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface FoodDao {
     /**
-     * Ranks a hit by three keys. First a name that starts with the query, then the curated base
-     * table and the user's own foods ahead of the bundled branded catalogue, then the shortest
-     * name. The middle key matters because the catalogue holds about 39.960 branded rows against
-     * 725 curated ones: without it a search for "Milch" returns seven dairy brands whose name is
+     * Ranks a hit by three keys. First a name that starts with the query, then everything except
+     * the bundled branded catalogue, then the shortest name.
+     *
+     * The middle key matters because the catalogue holds about 39.960 branded rows against 725
+     * curated ones: without it a search for "Milch" returns seven dairy brands whose name is
      * literally "Milch" and pushes the curated "Milch 1,5 %" off the first screen, and
-     * [FoodRepository.bestMatch], which takes the single top hit, resolves an analyzer ingredient
+     * `FoodRepository.bestMatch`, which takes the single top hit, resolves an analyzer ingredient
      * to a branded row that often carries no fibre, sugar, saturated fat or salt.
+     *
+     * It demotes one source rather than promoting a list of them, so a source added later is
+     * ranked with the user's own data by default instead of silently landing in the bulk bucket.
+     * [byName] sorts by the same rule on purpose: the two lookups must agree about which row is
+     * the best match for a name.
      */
     @Query(
         """
         SELECT * FROM foods
         WHERE name LIKE '%' || :query || '%' OR brand LIKE '%' || :query || '%' OR barcode = :query
         ORDER BY CASE WHEN name LIKE :query || '%' THEN 0 ELSE 1 END,
-                 CASE WHEN source IN ('BASE_DB', 'USER_ADDED') THEN 0 ELSE 1 END,
+                 CASE WHEN source = 'CATALOG' THEN 1 ELSE 0 END,
                  length(name)
         LIMIT :limit
         """,
@@ -38,7 +44,14 @@ interface FoodDao {
     @Query("SELECT * FROM foods WHERE id = :id")
     suspend fun byId(id: Long): FoodEntity?
 
-    @Query("SELECT * FROM foods WHERE name = :name COLLATE NOCASE ORDER BY source = 'BASE_DB' DESC LIMIT 1")
+    /** Same preference as [search]: anything before a row from the bundled branded catalogue. */
+    @Query(
+        """
+        SELECT * FROM foods WHERE name = :name COLLATE NOCASE
+        ORDER BY CASE WHEN source = 'CATALOG' THEN 1 ELSE 0 END
+        LIMIT 1
+        """,
+    )
     suspend fun byName(name: String): FoodEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -67,6 +80,25 @@ interface FoodDao {
 
     @Query("SELECT * FROM foods")
     suspend fun all(): List<FoodEntity>
+
+    /**
+     * The foods a backup has to carry: everything the user built up, without the two bundled
+     * tables. `BASE_DB` and `CATALOG` ship inside the APK and are re-created on any device, so
+     * writing them out only inflated the export (37 KB to 10,8 MB once the catalogue landed).
+     * `MealIngredientEntity` has no foreign key to `foods` and snapshots its own per-100 g
+     * values, so a `foodId` left dangling by this costs a re-pick, never a wrong total.
+     */
+    @Query("SELECT * FROM foods WHERE source NOT IN ('BASE_DB', 'CATALOG')")
+    suspend fun allUserFoods(): List<FoodEntity>
+
+    /**
+     * Relabels rows that an older build imported from `products.csv` under the `ONLINE_CACHED`
+     * name it shared with genuine online hits. Matched by barcode against the bundled asset, so
+     * a product the user really did fetch online keeps its label and its values; nothing is
+     * deleted.
+     */
+    @Query("UPDATE foods SET source = 'CATALOG' WHERE source = 'ONLINE_CACHED' AND barcode IN (:barcodes)")
+    suspend fun relabelAsCatalog(barcodes: List<String>)
 }
 
 @Dao

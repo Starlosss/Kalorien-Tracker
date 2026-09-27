@@ -26,7 +26,25 @@ enum class Confidence(val label: String) {
     LOW("Unsicher"),
 }
 
-enum class FoodSource { BASE_DB, USER_ADDED, ONLINE_CACHED, AI_ESTIMATED }
+enum class FoodSource {
+    /** Curated entries seeded from `base_foods.json`. */
+    BASE_DB,
+
+    /** Created by the user in "Eigenes Lebensmittel". */
+    USER_ADDED,
+
+    /**
+     * A row from the bundled `products.csv`. Kept apart from [ONLINE_CACHED] so a backup can
+     * leave it out: it ships inside the APK and is re-imported on every device anyway.
+     */
+    CATALOG,
+
+    /** Fetched online for a barcode or search the device did not know, then kept locally. */
+    ONLINE_CACHED,
+
+    /** Remembered from a recognised meal whose food the database did not know. */
+    AI_ESTIMATED,
+}
 
 enum class Difficulty(val label: String) {
     EASY("Einsteiger"),

@@ -160,7 +160,7 @@ private fun FoodRow(food: Food, onClick: () -> Unit) {
             val source = when (food.source) {
                 FoodSource.BASE_DB -> null
                 FoodSource.USER_ADDED -> "Eigenes"
-                FoodSource.ONLINE_CACHED -> "Produkt"
+                FoodSource.CATALOG, FoodSource.ONLINE_CACHED -> "Produkt"
                 FoodSource.AI_ESTIMATED -> "Erkannt"
             }
             Text(
