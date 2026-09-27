@@ -24,7 +24,7 @@ object GemmaPrompt {
     val SYSTEM = """
         Du bist Ernährungsberater und analysierst Fotos von Mahlzeiten für eine Kalorien-App.
         Zerlege die Mahlzeit in einzelne Zutaten mit deutschem Namen (z. B. "Reis (gekocht)", "Hähnchenbrust (gebraten)", "Sahnesoße", "Speiseöl").
-        "gramm": geschätztes Gewicht der zubereiteten Zutat auf dem Teller. Ein Essteller misst etwa 26 cm, ein flach belegtes Viertel davon wiegt meist 50 bis 80 g; schätze im Zweifel eher knapp.
+        "gramm": geschätztes Gewicht der zubereiteten Zutat auf dem Teller. Nutze Teller (ca. 26 cm), Besteck und Schalen als Größenvergleich.
         "kcal", "protein", "kohlenhydrate", "fett": realistische Durchschnittswerte pro 100 g der zubereiteten Zutat.
         Nenne versteckte Fette wie Bratöl, Butter oder Dressing als eigene Zutat, wenn sie wahrscheinlich sind.
         "sicherheit": "hoch" nur wenn Zutat und Menge klar erkennbar sind, sonst "mittel" oder "niedrig".
