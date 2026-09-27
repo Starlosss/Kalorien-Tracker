@@ -7,7 +7,10 @@ import com.kalorientracker.app.domain.model.Food
 import com.kalorientracker.app.domain.model.FoodSource
 import com.kalorientracker.app.domain.model.Nutrients
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -28,6 +31,7 @@ class ProductCatalogImporter @Inject constructor(
     private val foodDao: FoodDao,
 ) {
     private val mutex = Mutex()
+    private val importScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /**
      * Whether the catalogue is available locally (imported this run or in a previous one). A
@@ -76,6 +80,24 @@ class ProductCatalogImporter @Inject constructor(
             val durationMs = System.currentTimeMillis() - startedAt
             Log.i(TAG, "Katalogimport abgeschlossen: $accepted übernommen, $rejected verworfen, ${durationMs} ms")
         }
+    }
+
+    /**
+     * Brings the catalogue back after something emptied the `foods` table. The "already done"
+     * mark lives in SharedPreferences and survives `clearAllTables`, so without this a wipe would
+     * drop all 39.960 barcode rows and no later launch would ever bring them back: barcode scans
+     * would find nothing offline for good. [FoodSeeder] needs no counterpart because it asks the
+     * database itself rather than a stored mark.
+     *
+     * The re-import runs on this singleton's own scope, which lives as long as the process, not
+     * on the caller's. Deleting all data sends the user straight back to onboarding, which tears
+     * down the calling ViewModel; on its scope the import was measured to die after about 8.000
+     * of 39.960 rows and leave a silently incomplete catalogue behind.
+     */
+    fun restartAfterWipe() {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().remove(KEY_VERSION).apply()
+        isImported = false
+        importScope.launch { importIfNeeded() }
     }
 
     companion object {

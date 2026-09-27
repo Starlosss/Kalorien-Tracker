@@ -33,6 +33,12 @@ object Fmt {
     /** Parses user input like "81,7" or "81.7". */
     fun parse(text: String): Double? = text.trim().replace(',', '.').toDoubleOrNull()
 
+    /** "1 Tag" or "7 Tage", for a count that stands on its own. */
+    fun days(count: Int): String = if (count == 1) "1 Tag" else "${int(count)} Tage"
+
+    /** "von 1 Tag" or "von 7 Tagen": the dative form, for use after "von". */
+    fun daysDative(count: Int): String = if (count == 1) "1 Tag" else "${int(count)} Tagen"
+
     private val dayMonth = DateTimeFormatter.ofPattern("d. MMM", locale)
     private val dayMonthYear = DateTimeFormatter.ofPattern("d. MMM yyyy", locale)
     private val time = DateTimeFormatter.ofPattern("HH:mm", locale)

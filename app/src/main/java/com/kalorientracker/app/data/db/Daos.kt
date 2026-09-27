@@ -11,11 +11,22 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface FoodDao {
+    /**
+     * Ranks a hit by three keys. First a name that starts with the query, then the curated base
+     * table and the user's own foods ahead of the bundled branded catalogue, then the shortest
+     * name. The middle key matters because the catalogue holds about 39.960 branded rows against
+     * 725 curated ones: without it a search for "Milch" returns seven dairy brands whose name is
+     * literally "Milch" and pushes the curated "Milch 1,5 %" off the first screen, and
+     * [FoodRepository.bestMatch], which takes the single top hit, resolves an analyzer ingredient
+     * to a branded row that often carries no fibre, sugar, saturated fat or salt.
+     */
     @Query(
         """
         SELECT * FROM foods
         WHERE name LIKE '%' || :query || '%' OR brand LIKE '%' || :query || '%' OR barcode = :query
-        ORDER BY CASE WHEN name LIKE :query || '%' THEN 0 ELSE 1 END, length(name)
+        ORDER BY CASE WHEN name LIKE :query || '%' THEN 0 ELSE 1 END,
+                 CASE WHEN source IN ('BASE_DB', 'USER_ADDED') THEN 0 ELSE 1 END,
+                 length(name)
         LIMIT :limit
         """,
     )

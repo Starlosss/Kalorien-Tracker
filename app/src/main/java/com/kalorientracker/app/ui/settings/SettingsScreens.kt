@@ -362,7 +362,12 @@ private fun DataSection(learningCount: Int, vm: SettingsViewModel) {
     SettingBlock("Import", "Holt einen früheren Stand aus einem Backup oder Export zurück. Deine jetzigen Daten werden dabei ersetzt.") {
         SecondaryButton("Backup oder Export importieren", { importFile.launch(arrayOf("application/zip", "application/json", "application/octet-stream", "*/*")) }, Modifier.fillMaxWidth())
     }
-    SettingBlock("Lernsystem", "Die App hat $learningCount Portionskorrekturen gespeichert und rechnet sie in neue Schätzungen ein. Die Lebensmitteldatenbank bleibt unverändert.") {
+    val learningText = when (learningCount) {
+        0 -> "Die App hat noch keine Portionskorrektur gespeichert. Sobald du eine geschätzte Menge änderst, merkt sie sich das für neue Schätzungen. Die Lebensmitteldatenbank bleibt unverändert."
+        1 -> "Die App hat 1 Portionskorrektur gespeichert und rechnet sie in neue Schätzungen ein. Die Lebensmitteldatenbank bleibt unverändert."
+        else -> "Die App hat $learningCount Portionskorrekturen gespeichert und rechnet sie in neue Schätzungen ein. Die Lebensmitteldatenbank bleibt unverändert."
+    }
+    SettingBlock("Lernsystem", learningText) {
         SecondaryButton("Gelerntes zurücksetzen", vm::resetLearning, Modifier.fillMaxWidth(), enabled = learningCount > 0)
     }
     SettingBlock("Daten löschen", "Löscht alle Mahlzeiten, Fotos, Gewichtseinträge, Ziele und Einstellungen von diesem Gerät.") {

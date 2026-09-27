@@ -1,6 +1,9 @@
 package com.kalorientracker.app
 
+import android.content.Context
+import android.content.res.Configuration
 import android.os.Bundle
+import android.os.LocaleList
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -28,10 +31,25 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import java.util.Locale
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    /**
+     * Pins the whole activity to German. Every string in this app is German and every number and
+     * date it formats itself already asks for [Locale.GERMANY] explicitly (see `Format`,
+     * `ChartLabels`). Framework components that carry their own text do not: on a phone set to
+     * English, the Material date range picker in the statistics screen came up with English
+     * weekday initials, an English date format and a week starting on Sunday, inside an otherwise
+     * German dialog. Setting the locale on the base context covers those too.
+     */
+    override fun attachBaseContext(newBase: Context) {
+        val config = Configuration(newBase.resources.configuration)
+        config.setLocales(LocaleList(Locale.GERMANY))
+        super.attachBaseContext(newBase.createConfigurationContext(config))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

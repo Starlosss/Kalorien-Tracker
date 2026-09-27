@@ -7,6 +7,7 @@ import com.kalorientracker.app.data.db.ActivityEntity
 import com.kalorientracker.app.data.db.AppDatabase
 import com.kalorientracker.app.data.db.FoodEntity
 import com.kalorientracker.app.data.db.FoodSeeder
+import com.kalorientracker.app.data.db.ProductCatalogImporter
 import com.kalorientracker.app.data.db.GoalTargetsEntity
 import com.kalorientracker.app.data.db.LearningCorrectionEntity
 import com.kalorientracker.app.data.db.MealEntity
@@ -74,6 +75,7 @@ class BackupManager @Inject constructor(
     private val photos: PhotoStorage,
     private val settings: SettingsRepository,
     private val seeder: FoodSeeder,
+    private val catalogImporter: ProductCatalogImporter,
     private val json: Json,
 ) {
     /** Writes either a plain JSON export or a ZIP backup that also contains all meal photos. */
@@ -164,6 +166,10 @@ class BackupManager @Inject constructor(
             db.learningDao().insertAll(data.corrections)
         }
         seeder.seedIfNeeded()
+        // Same reason as in deleteAllData. A file written on a device whose catalogue import had
+        // not finished yet carries only part of the barcode rows, and the unique index on
+        // `barcode` means the re-import fills the gaps without touching what the file restored.
+        catalogImporter.restartAfterWipe()
         settings.restore(
             settings.current().copy(
                 onboardingCompleted = data.profile != null && data.targets.isNotEmpty(),
@@ -182,6 +188,9 @@ class BackupManager @Inject constructor(
         photos.deleteAll()
         settings.clear()
         seeder.seedIfNeeded()
+        // The bundled tables are not user data: they have to be back before the next screen
+        // needs them, or food search and the offline barcode lookup stay empty for good.
+        catalogImporter.restartAfterWipe()
     }
 
     suspend fun deleteAllPhotos() = withContext(Dispatchers.IO) {

@@ -253,7 +253,7 @@ private fun Hero(
             val target = if (metric == Metric.CALORIES) targetKcal?.toDouble() else targetFor(metric)
             val parts = listOfNotNull(
                 target?.let { "Ziel ${Fmt.int(it)} ${metric.unit}" },
-                summary?.let { "${it.trackedDays} von ${it.totalDays} Tagen erfasst" },
+                summary?.let { "${it.trackedDays} von ${Fmt.daysDative(it.totalDays)} erfasst" },
             )
             Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodyMedium, color = Palette.TextTertiary)
         }
@@ -322,7 +322,7 @@ private fun Details(summary: PeriodSummary, streak: Int, targetKcal: Int?, targe
             }
             Spacer(Modifier.height(10.dp))
             if (targetKcal != null) {
-                NutrientRow("Kalorienziel getroffen", "${summary.daysOnTarget} von ${summary.trackedDays} Tagen")
+                NutrientRow("Kalorienziel getroffen", "${summary.daysOnTarget} von ${Fmt.daysDative(summary.trackedDays)}")
             }
         }
         val end = summary.weightEnd
@@ -330,7 +330,7 @@ private fun Details(summary: PeriodSummary, streak: Int, targetKcal: Int?, targe
             val remaining = kotlin.math.abs(targetWeight - end)
             NutrientRow("Bis zum Zielgewicht", if (remaining < 0.05) "erreicht" else Fmt.kg(remaining))
         }
-        NutrientRow("Serie", if (streak == 1) "1 Tag" else "$streak Tage")
+        NutrientRow("Serie", Fmt.days(streak))
     }
 }
 
