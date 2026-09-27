@@ -1,5 +1,6 @@
 package com.kalorientracker.app.ui.add.ingredients
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
@@ -177,6 +178,7 @@ private fun MacroMini(label: String, grams: Double, color: androidx.compose.ui.g
 }
 
 @Composable
+@VisibleForTesting
 internal fun IngredientCard(
     ingredient: DraftIngredient,
     effectiveGrams: Double,
