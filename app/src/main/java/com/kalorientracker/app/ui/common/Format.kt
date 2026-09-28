@@ -33,11 +33,19 @@ object Fmt {
     /** Parses user input like "81,7" or "81.7". */
     fun parse(text: String): Double? = text.trim().replace(',', '.').toDoubleOrNull()
 
+    /**
+     * "1 Foto" or "12 Fotos": a count with the noun it belongs to. German has no bare plural the
+     * way English does, so a count and its noun cannot be assembled by string interpolation
+     * without producing "1 Fotos" at the one value that shows up on every fresh install.
+     */
+    fun count(n: Int, singular: String, plural: String): String =
+        if (n == 1) "1 $singular" else "${int(n)} $plural"
+
     /** "1 Tag" or "7 Tage", for a count that stands on its own. */
-    fun days(count: Int): String = if (count == 1) "1 Tag" else "${int(count)} Tage"
+    fun days(n: Int): String = count(n, "Tag", "Tage")
 
     /** "von 1 Tag" or "von 7 Tagen": the dative form, for use after "von". */
-    fun daysDative(count: Int): String = if (count == 1) "1 Tag" else "${int(count)} Tagen"
+    fun daysDative(n: Int): String = count(n, "Tag", "Tagen")
 
     private val dayMonth = DateTimeFormatter.ofPattern("d. MMM", locale)
     private val dayMonthYear = DateTimeFormatter.ofPattern("d. MMM yyyy", locale)

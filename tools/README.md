@@ -13,6 +13,12 @@
 - `dishes_block.json` ist die Merkliste von `dishes.py`: die Namen, die es zuletzt
   geschrieben hat. Nur diese Eintraege darf es wieder entfernen. Nicht von Hand
   aendern, das Skript schreibt sie bei jedem Lauf neu.
+- `bench/` ist der Messstand fuer die Fotoerkennung. Ein eigenstaendiges JVM-Projekt,
+  das `GemmaPrompt.kt`, `DescriptionAnchors.kt`, `StubFoodAnalyzer.kt` und
+  `FoodAnalyzer.kt` direkt aus `app/src/main/java` mitkompiliert, statt sie zu
+  kopieren. Gemessen wird damit also der ausgelieferte Prompt und Parser, nicht
+  eine Abschrift davon. Ergebnisse und Rohdaten liegen im Vault unter
+  `Analysen/Foto-Erkennung Messung.md` und `Analysen/daten/`.
 - `base_foods_manual.json` ist die handgepflegte Liste mit 153 Grundnahrungsmitteln.
   Diese Datei ist die Quelle der Wahrheit fuer diese 153 Eintraege und wird nicht
   vom Skript veraendert. Die Namen darin (zum Beispiel "Reis (gekocht)") werden vom

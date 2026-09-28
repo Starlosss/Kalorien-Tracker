@@ -34,11 +34,20 @@ class OpenFoodFactsSource @Inject constructor(
 ) : OnlineProductSource {
 
     override suspend fun byBarcode(barcode: String): Food? = withContext(Dispatchers.IO) {
-        val digits = barcode.filter { it.isDigit() }
-        productFrom(DE_BASE, digits, barcode) ?: productFrom(WORLD_BASE, digits, barcode)
+        productFrom(DE_BASE, barcode.filter { it.isDigit() }, barcode)
     }
 
-    /** Looks the code up on one host; returns null both when it is unreachable and when it has no product. */
+    /**
+     * Looks the code up on one host. Returns null when the host answers that it has no such
+     * product, and throws when it cannot be reached at all, which is what turns into
+     * `ProductLookup.Offline` further up.
+     *
+     * There is no second attempt against the world host on a miss. The country hosts are views
+     * over one shared product database, so a code the German host does not know is not on the
+     * world host either, and a host that cannot be reached throws here rather than returning
+     * null. A retry would only double the wait before a failed scan, and the caller already tries
+     * up to two GTIN spellings.
+     */
     private fun productFrom(base: String, digits: String, barcode: String): Food? {
         val url = "$base/api/v2/product/$digits.json".toHttpUrl().newBuilder()
             .addQueryParameter("fields", FIELDS)

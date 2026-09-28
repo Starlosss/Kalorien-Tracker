@@ -54,6 +54,7 @@ import com.kalorientracker.app.ui.add.AddFlowViewModel
 import com.kalorientracker.app.ui.common.AnimatedNumber
 import com.kalorientracker.app.ui.common.Expandable
 import com.kalorientracker.app.ui.common.Fmt
+import com.kalorientracker.app.ui.common.MissingNutrientNote
 import com.kalorientracker.app.ui.common.NutrientRow
 import com.kalorientracker.app.ui.common.PrimaryButton
 import com.kalorientracker.app.ui.common.ScreenHeader
@@ -177,6 +178,7 @@ fun NutritionSummary(totals: Nutrients) {
                 NutrientRow("Zucker", "${Fmt.one(totals.sugar)} g")
                 NutrientRow("Gesättigte Fettsäuren", "${Fmt.one(totals.saturatedFat)} g")
                 NutrientRow("Salz", "${Fmt.one(totals.salt)} g")
+                MissingNutrientNote()
             }
         }
     }

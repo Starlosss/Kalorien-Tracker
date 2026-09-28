@@ -72,10 +72,6 @@ class CalculateTdeeUseCase {
     }
 
     companion object {
-        /** Sources shown in the app so every number can be checked. */
-        const val SOURCE_ENERGY = "DGE: Fragen und Antworten zur Energiezufuhr (2015)"
-        const val SOURCE_MET = "Compendium of Physical Activities (Ainsworth et al.)"
-
         /**
          * Resting energy expenditure in kcal per day, exactly the equation the DGE publishes
          * (result in MJ, converted with 239 kcal/MJ). It deliberately uses weight and age only.

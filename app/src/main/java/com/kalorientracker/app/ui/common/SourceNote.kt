@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -14,6 +15,10 @@ import com.kalorientracker.app.ui.theme.Palette
 /**
  * Where the numbers come from. Every value the app computes is traceable to a published
  * reference, so the plan can be checked instead of believed.
+ *
+ * [SOURCES] is the only place these citations are written down. They used to be repeated as
+ * unused constants next to the calculations as well, which is two copies of the same claim and
+ * only one of them on screen.
  */
 @Composable
 fun SourceNote(modifier: Modifier = Modifier) {
@@ -33,6 +38,22 @@ fun SourceNote(modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * The same admission as the last line of [SOURCES], put where the four numbers are actually read.
+ * On the daily screen they stand next to a target, so a zero looks like a measured shortfall
+ * rather than a gap in the data, and roughly a third of the bundled products have no fibre value
+ * at all.
+ */
+@Composable
+fun MissingNutrientNote(modifier: Modifier = Modifier) {
+    Text(
+        "Ist einer dieser Werte bei einem Produkt nicht bekannt, zählt die App dafür 0. Die Zeilen können deshalb zu niedrig sein.",
+        style = MaterialTheme.typography.bodySmall,
+        color = Palette.TextTertiary,
+        modifier = modifier.fillMaxWidth().padding(top = 6.dp),
+    )
+}
+
 private val SOURCES = listOf(
     "Energiebedarf" to "Ruheenergieverbrauch × PAL. So leitet die Deutsche Gesellschaft für Ernährung (DGE) ihre Referenzwerte ab. Die Formel nutzt Gewicht und Alter. Welcher PAL-Wert gilt, schätzt die App aus deinen Schritten. Die Stufen selbst (1,4 bis 1,9) stammen von der DGE.",
     "Fett und Kohlenhydrate" to "DGE-Richtwerte: 30 % der Energie aus Fett, bei viel Bewegung 35 %. Kohlenhydrate sind der Rest, über 50 %.",
@@ -41,5 +62,5 @@ private val SOURCES = listOf(
     "Sport" to "MET-Werte aus dem Compendium of Physical Activities. Gerechnet wird nur die Energie über dem Ruheumsatz, damit nichts doppelt zählt.",
     "Abnehmen" to "500 kcal Defizit pro Tag, das entspricht etwa 0,5 kg pro Woche. So steht es in der S3-Leitlinie „Prävention und Therapie der Adipositas“.",
     "BMI" to "Einordnung nach der WHO. Der BMI geht nicht in den Kalorienbedarf ein. Er ordnet nur dein Gewicht ein.",
-    "Lebensmitteldaten" to "Die mitgelieferten Lebensmittel und Produkte stammen von Open Food Facts. Diese Daten stehen unter der Open Database License (ODbL). Die gekochten Gerichte stammen aus der Survey-Datenbank (FNDDS) von USDA FoodData Central. Diese Daten sind gemeinfrei. Bei vielen verpackten Produkten sind nur Kalorien und die Hauptnährstoffe bekannt. Fehlen Werte zu Ballaststoffen, Zucker, gesättigten Fettsäuren oder Salz, zählt die App dafür 0. Diese vier Tageswerte können dadurch zu niedrig ausfallen.",
+    "Lebensmitteldaten" to "Die Grundlebensmittel sind von Hand gepflegt und gegen die genannten Quellen geprüft. Die weiteren Lebensmittel und die Produkte mit Barcode stammen von Open Food Facts. Diese Daten stehen unter der Open Database License (ODbL). Die gekochten Gerichte stammen aus der Survey-Datenbank (FNDDS) von USDA FoodData Central. Diese Daten sind gemeinfrei. Bei vielen verpackten Produkten sind nur Kalorien und die Hauptnährstoffe bekannt. Fehlen Werte zu Ballaststoffen, Zucker, gesättigten Fettsäuren oder Salz, zählt die App dafür 0. Diese vier Tageswerte können dadurch zu niedrig ausfallen.",
 )

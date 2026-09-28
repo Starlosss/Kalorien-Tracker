@@ -79,10 +79,6 @@ class CalculateMacroTargetsUseCase {
         const val FIBER_PER_1000_KCAL = 14.6
         const val MIN_FIBER_G = 30.0
 
-        const val SOURCE_NUTRIENTS = "DGE-Referenzwerte für die Nährstoffzufuhr"
-        const val SOURCE_PROTEIN_SPORT = "ISSN Position Stand: Protein and Exercise (2017)"
-        const val SOURCE_DEFICIT = "S3-Leitlinie Adipositas (DAG u. a.)"
-
         fun goalDelta(goal: Goal): Int = when (goal) {
             Goal.LOSE -> -500
             Goal.MAINTAIN -> 0

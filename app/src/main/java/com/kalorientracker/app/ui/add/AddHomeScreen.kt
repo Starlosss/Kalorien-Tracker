@@ -167,7 +167,7 @@ fun AddHomeScreen(
                     Column(Modifier.weight(1f)) {
                         SectionLabel("Entwurf")
                         Text(state.suggestedName, style = MaterialTheme.typography.titleMedium, color = Palette.TextPrimary, maxLines = 1)
-                        Text("${Fmt.int(state.totals.kcal)} kcal · ${state.ingredients.size} Zutaten", style = MaterialTheme.typography.bodySmall, color = Palette.TextTertiary)
+                        Text("${Fmt.int(state.totals.kcal)} kcal · ${Fmt.count(state.ingredients.size, "Zutat", "Zutaten")}", style = MaterialTheme.typography.bodySmall, color = Palette.TextTertiary)
                     }
                     SecondaryButton("Fortsetzen", onReview)
                 }

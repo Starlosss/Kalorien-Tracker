@@ -5,7 +5,6 @@ import android.content.Context
 import com.kalorientracker.app.data.db.FoodDao
 import com.kalorientracker.app.data.db.FoodEntity
 import com.kalorientracker.app.data.db.MealDao
-import com.kalorientracker.app.data.db.ProductCatalogImporter
 import com.kalorientracker.app.data.remote.OnlineProductSource
 import com.kalorientracker.app.data.settings.SettingsRepository
 import com.kalorientracker.app.domain.model.Food
@@ -60,7 +59,6 @@ private fun repositoryWithFoods(foods: List<FoodEntity>): FoodRepository {
         mealDao = UnusedMealDao(),
         online = UnusedOnlineProductSource(),
         settings = SettingsRepository(context),
-        catalogImporter = ProductCatalogImporter(context, foodDao),
     )
 }
 

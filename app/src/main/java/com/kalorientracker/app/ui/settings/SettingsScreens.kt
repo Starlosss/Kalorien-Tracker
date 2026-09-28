@@ -413,7 +413,7 @@ private fun PrivacySection(onlineEnabled: Boolean, vm: SettingsViewModel) {
         onCheckedChange = vm::setOnlineLookup,
     )
     Spacer(Modifier.height(16.dp))
-    SettingBlock("Fotos", "${stats.first} Fotos · ${Fmt.one(stats.second / 1_048_576.0)} MB auf diesem Gerät. Ein einzelnes Foto löschst du in der Mahlzeit, zu der es gehört.") {
+    SettingBlock("Fotos", "${Fmt.count(stats.first, "Foto", "Fotos")} · ${Fmt.one(stats.second / 1_048_576.0)} MB auf diesem Gerät. Ein einzelnes Foto löschst du in der Mahlzeit, zu der es gehört.") {
         SecondaryButton("Alle Fotos löschen", { confirm = true }, Modifier.fillMaxWidth(), enabled = stats.first > 0)
     }
     if (confirm) {

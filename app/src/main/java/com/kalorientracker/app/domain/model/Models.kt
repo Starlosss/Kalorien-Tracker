@@ -102,6 +102,8 @@ data class WorkoutExercise(
         get() = when {
             reps != null -> "$sets × $reps"
             durationSeconds != null -> "$sets × ${durationSeconds} s"
+            // No Fmt here: this is the domain layer, and it must not reach into the UI.
+            sets == 1 -> "1 Satz"
             else -> "$sets Sätze"
         }
 }

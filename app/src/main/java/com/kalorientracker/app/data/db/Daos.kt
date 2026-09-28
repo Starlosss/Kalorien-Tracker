@@ -112,8 +112,14 @@ interface FoodDao {
     /**
      * Relabels rows that an older build imported from `products.csv` under the `ONLINE_CACHED`
      * name it shared with genuine online hits. Matched by barcode against the bundled asset, so
-     * a product the user really did fetch online keeps its label and its values; nothing is
-     * deleted.
+     * nothing is deleted and no value changes.
+     *
+     * It matches by barcode alone, which is deliberate but not free: a product the user really
+     * did fetch online, whose barcode also happens to be in the bundled table, is relabelled too
+     * and then falls out of [allUserFoods], so it stops being written into an export. That row is
+     * rebuilt from the bundled asset on every install, so nothing is lost. Telling the two apart
+     * would need a flag the old rows never stored, and the alternative, leaving every matching
+     * row alone, is what put 10 MB of catalogue into the export in the first place.
      *
      * Room binds one variable per barcode and the importer hands over a whole chunk at a time,
      * which is far more than a statement may bind on API 26 to 30; see [SQLITE_MAX_BIND_ARGS].

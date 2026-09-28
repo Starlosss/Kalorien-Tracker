@@ -59,6 +59,7 @@ import com.kalorientracker.app.ui.common.EmptyHint
 import com.kalorientracker.app.ui.common.Expandable
 import com.kalorientracker.app.ui.common.Fmt
 import com.kalorientracker.app.ui.common.MacroBar
+import com.kalorientracker.app.ui.common.MissingNutrientNote
 import com.kalorientracker.app.ui.common.NumberField
 import com.kalorientracker.app.ui.common.NutrientRow
 import com.kalorientracker.app.ui.common.PrimaryButton
@@ -183,7 +184,7 @@ private fun StreakChip(days: Int) {
     ) {
         Box(Modifier.size(6.dp).clip(CircleShape).background(Palette.TextPrimary))
         Spacer(Modifier.width(6.dp))
-        Text(if (days == 1) "1 Tag" else "$days Tage", style = MaterialTheme.typography.labelMedium, color = Palette.TextSecondary)
+        Text(Fmt.days(days), style = MaterialTheme.typography.labelMedium, color = Palette.TextSecondary)
     }
 }
 
@@ -252,6 +253,7 @@ fun ExtraNutrients(totals: Nutrients, targets: GoalTargets?) {
     NutrientRow("Zucker", "${Fmt.int(totals.sugar)} g", detail = targets?.let { "/ max. ${it.sugarMaxG} g" })
     NutrientRow("Gesättigte Fettsäuren", "${Fmt.int(totals.saturatedFat)} g", detail = targets?.let { "/ max. ${it.saturatedFatMaxG} g" })
     NutrientRow("Salz", "${Fmt.one(totals.salt)} g", detail = targets?.let { "/ max. ${Fmt.small(it.saltMaxG)} g" })
+    MissingNutrientNote()
 }
 
 @Composable

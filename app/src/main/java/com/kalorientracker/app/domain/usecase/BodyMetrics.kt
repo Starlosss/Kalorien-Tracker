@@ -8,8 +8,6 @@ package com.kalorientracker.app.domain.usecase
  */
 object BodyMetrics {
 
-    const val SOURCE = "WHO: Body mass index classification"
-
     fun bmi(weightKg: Double, heightCm: Double): Double? {
         if (heightCm < 50 || weightKg <= 0) return null
         val metres = heightCm / 100.0

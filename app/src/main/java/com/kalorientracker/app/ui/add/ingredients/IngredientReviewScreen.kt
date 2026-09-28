@@ -124,9 +124,22 @@ fun IngredientReviewScreen(
                 }
             }
         }
+        // A row with an open amount carries a token gram, which the row above says plainly does
+        // not count yet. Nothing downstream repeats that: the saved meal would show a flat "1 g"
+        // as if it had been weighed. So the step does what the user asked the app to do when
+        // something is unclear, and insists on an answer. Removing the row is the other way out.
+        val openAmount = state.firstOpenAmount
+        if (openAmount != null) {
+            Text(
+                "Bei „${openAmount.name}“ fehlt noch die Menge. Trage sie ein oder entferne die Zutat.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Palette.TextTertiary,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+            )
+        }
         Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             SecondaryButton("Verwerfen", { viewModel.discard(); onDiscard() }, Modifier.weight(1f))
-            PrimaryButton("Weiter", onContinue, Modifier.weight(2f), enabled = state.ingredients.isNotEmpty())
+            PrimaryButton("Weiter", onContinue, Modifier.weight(2f), enabled = state.ingredients.isNotEmpty() && openAmount == null)
         }
     }
 }

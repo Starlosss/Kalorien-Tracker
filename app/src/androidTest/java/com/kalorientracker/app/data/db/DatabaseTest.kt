@@ -185,11 +185,6 @@ class DatabaseTest {
     }
 
     /**
-     * `byName` feeds `bestMatch`, which takes the single top row. With two rows of the same name
-     * and no tiebreaker the answer depended on whatever order SQLite produced, so the same
-     * database could resolve the same ingredient to different foods on different runs.
-     */
-    /**
      * `byName` feeds `bestMatch`, which takes the single top row, and `search` fills the list the
      * person scrolls. Both have to rank the same way, or the food shown at the top of the list is
      * not the one an analyzer ingredient resolves to.

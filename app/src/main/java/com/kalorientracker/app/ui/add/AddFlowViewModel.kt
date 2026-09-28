@@ -101,6 +101,16 @@ data class AddFlowState(
 
     fun effectiveGrams(ingredient: DraftIngredient): Double = ingredient.grams * portionFactor
 
+    /**
+     * The first ingredient whose amount nobody has stated yet, or null when the draft is ready.
+     *
+     * Both the review step and the save path read this, and they have to agree: the step refuses
+     * to move on while it is set, and saving learns no portion from those rows. An ingredient
+     * with an open amount carries only a placeholder gram, so anything that treats it as a
+     * weighed amount is wrong, whether that is a meal total or a remembered portion.
+     */
+    val firstOpenAmount: DraftIngredient? get() = ingredients.firstOrNull { it.amountOpen }
+
     val totals: Nutrients
         get() = ingredients.map { it.per100g.forGrams(effectiveGrams(it)) }.sum()
 
@@ -313,7 +323,11 @@ class AddFlowViewModel @Inject constructor(
         }
     }
 
-    /** Replaces the food of an ingredient but keeps the amount — the user verified it, so no confidence badge. */
+    /**
+      * Replaces the food of an ingredient and keeps the amount, which the user has verified, so
+      * no confidence badge. An amount that is still open stays open: picking a different food
+      * does not answer how much of it was on the plate.
+      */
     fun swapFood(key: String, food: Food) = updateIngredient(key) {
         it.copy(
             name = food.name,
@@ -416,7 +430,11 @@ class AddFlowViewModel @Inject constructor(
             meals.save(meal, corrections)
             // Only now, with the meal safely written, learn the ingredients the user actually
             // kept: a draft that gets discarded before this point leaves nothing behind.
-            s.ingredients.filter { it.foodId == null }.forEach { draft ->
+            // An ingredient whose amount is still open carries DescriptionAnchors.UNKNOWN_AMOUNT_GRAMS,
+            // a placeholder, not a portion. Learning from it would offer "1 g" as the usual
+            // portion forever after. The review step does not let one through today, and this
+            // keeps that true if it ever does.
+            s.ingredients.filter { it.foodId == null && !it.amountOpen }.forEach { draft ->
                 foods.remember(draft.name, draft.per100g, s.effectiveGrams(draft))
             }
             val after = before + meal.totals

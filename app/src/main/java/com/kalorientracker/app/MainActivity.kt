@@ -44,6 +44,10 @@ class MainActivity : ComponentActivity() {
      * weekday initials, an English date format and a week starting on Sunday, inside an otherwise
      * German dialog. Setting the locale on the base context covers those too.
      */
+    // Lint flags this for app bundles with language splits: pinning a locale there can leave the
+    // strings for it undownloaded. This app ships as a single sideloaded APK with every string
+    // compiled in, so the pin is safe. It stops being safe the day the app is published as an AAB.
+    @Suppress("AppBundleLocaleChanges")
     override fun attachBaseContext(newBase: Context) {
         val config = Configuration(newBase.resources.configuration)
         config.setLocales(LocaleList(Locale.GERMANY))
